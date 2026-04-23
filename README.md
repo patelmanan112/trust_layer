@@ -62,6 +62,8 @@ Unlike traditional payment platforms that treat a successful payment as the fina
 
 > This project is heavily **frontend-focused**, built with React, Redux Toolkit, and a component-driven architecture — with a supporting Node.js + MongoDB backend for real-world functionality.
 
+### *Figma Prototype Link*
+- 💼 **Figma:** [Figma Link](https://www.figma.com/proto/xpWC4tlj3KSbLjvKCF4ceZ/untitled?node-id=817-4&t=9b6ygc3JUveGCtmS-1)
 ---
 
 ## ❗ Problem Statement
@@ -483,9 +485,9 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduc
 
 **Built with ❤️ by a passionate frontend developer focused on solving real-world fintech problems through clean UI, scalable architecture, and outcome-driven design.**
 
-[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/your-username)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/your-profile)
-[![Portfolio](https://img.shields.io/badge/Portfolio-FF5722?style=for-the-badge&logo=todoist&logoColor=white)](https://yourportfolio.com)
+[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/patelmanan112)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/manan-patel-557535390/)
+[![Portfolio](https://img.shields.io/badge/Portfolio-FF5722?style=for-the-badge&logo=todoist&logoColor=white)](https://manan-patel-portfolio.vercel.app/)
 
 </div>
 
@@ -497,8 +499,6 @@ Have questions, suggestions, or want to collaborate?
 
 - 📧 **Email:** manan.patel.cg@gmail.com
 - 💼 **LinkedIn:** [linkedin.com/in/Manan-Patel](https://www.linkedin.com/in/manan-patel-557535390/)
-- 🐙 **GitHub:** [Github](https://github.com/patelmanan112)
-- 🐙 **Portfolio:** [Portfolio](https://manan-patel-portfolio.vercel.app/)
 
 ---
 
