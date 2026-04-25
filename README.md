@@ -149,13 +149,10 @@ This creates a **fair, transparent, and accountable** ecosystem for both service
 | **React** | ^18.x | Core UI library |
 | **Redux Toolkit** | ^2.x | Global state management |
 | **React Router DOM** | ^6.x | Client-side routing |
-| **Axios** | ^1.x | HTTP client with interceptors |
 | **Formik** | ^2.x | Form state management |
 | **Yup** | ^1.x | Schema-based validation |
 | **Tailwind CSS** | ^3.x | Utility-first styling |
 | **React Icons** | ^4.x | Icon library |
-| **React Toastify** | ^10.x | Notification toasts |
-| **Chart.js / Recharts** | ^4.x | Dashboard data visualization |
 
 ### Backend
 
