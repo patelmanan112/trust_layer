@@ -39,7 +39,7 @@ const LandingPage = () => {
             TrustVault provides high-fidelity escrow services for businesses, ensuring funds are only released when every condition of the agreement is met.
           </p>
           <div className="flex gap-4">
-            <Link to="/login">
+            <Link to="/role-selection">
               <button className="bg-[#3F675A] text-white px-7 py-3.5 rounded-lg font-semibold transition-all hover:bg-[#315248] cursor-pointer">Get Started</button>
             </Link>
             <button className="bg-transparent text-[#3F675A] px-7 py-3.5 rounded-lg font-semibold border-1.5 border-[#3F675A] transition-all hover:bg-[#3F675A]/5">View Documentation</button>
@@ -47,7 +47,7 @@ const LandingPage = () => {
         </div>
         <div className="flex-1">
           <div className="w-full rounded-2xl shadow-2xl overflow-hidden">
-            <img src="https://images.unsplash.com/photo-1611974715853-268fd9f3906d?auto=format&fit=crop&q=80&w=1200" alt="Financial Chart" className="w-full block" />
+            <img src="https://plus.unsplash.com/premium_photo-1670213989516-449ccda46fdb?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Financial Chart" className="w-full block" />
           </div>
         </div>
       </section>
@@ -151,7 +151,7 @@ const LandingPage = () => {
               <p className="text-sm text-gray-500 max-w-[200px] mx-auto">Funds are instantly released to the seller. Success recorded.</p>
             </div>
           </div>
-          <Link to="/login">
+          <Link to="/role-selection">
             <button className="bg-[#3F675A] text-white px-8 py-4 rounded-lg font-semibold inline-flex items-center gap-2.5 cursor-pointer">
               Launch Your First Transaction <FiArrowRight />
             </button>

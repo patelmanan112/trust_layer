@@ -1,15 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FiShield, FiArrowRight, FiInfo } from 'react-icons/fi';
 import { HiOutlineLibrary } from 'react-icons/hi';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import Navbar from '../components/Navbar/Navbar';
+
 const Login = () => {
   const [activeTab, setActiveTab] = useState('signin');
+  const [searchParams] = useSearchParams();
+  const role = searchParams.get('role');
+  const type = searchParams.get('type');
+
+  useEffect(() => {
+    // If we want to default to 'create' when coming from role selection
+    if (role) {
+      setActiveTab('create');
+    }
+  }, [role]);
 
   const formik = useFormik({
     initialValues: {
+      fullName: '',
+      company: '',
       email: '',
       password: '',
     },
@@ -60,6 +73,18 @@ const Login = () => {
       {/* RIGHT SIDE: LOGIN CARD */}
       <div className="flex-1 flex items-center justify-center p-10">
         <div className="bg-white w-full max-w-[500px] p-12 rounded-xl shadow-[0_10px_25px_-5px_rgba(0,0,0,0.05)]">
+          
+          {role && (
+            <div className="mb-6 flex items-center gap-2">
+              <span className="bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                {type === 'freelancer' ? 'Freelancer' : 'Client'} Account
+              </span>
+              <span className="text-sm font-medium text-gray-500 capitalize">
+                (Role: {role})
+              </span>
+            </div>
+          )}
+
           <div className="flex gap-8 mb-8 border-b border-gray-200">
             <div 
               className={`pb-3 font-medium cursor-pointer relative transition-colors ${activeTab === 'signin' ? 'text-[#3d6356]' : 'text-gray-500'}`}
@@ -78,6 +103,35 @@ const Login = () => {
           </div>
 
           <form onSubmit={formik.handleSubmit}>
+            {activeTab === 'create' && (
+              <>
+                <div className="mb-6">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Full Name</label>
+                  <input 
+                    name="fullName"
+                    type="text" 
+                    className="w-full px-4 py-3.5 bg-gray-50 border rounded-lg text-[15px] text-gray-900 outline-none focus:bg-gray-100 transition-colors border-transparent" 
+                    placeholder="Manan Patel"
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    value={formik.values.fullName}
+                  />
+                </div>
+                <div className="mb-6">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Organization / Company Name</label>
+                  <input 
+                    name="company"
+                    type="text" 
+                    className="w-full px-4 py-3.5 bg-gray-50 border rounded-lg text-[15px] text-gray-900 outline-none focus:bg-gray-100 transition-colors border-transparent" 
+                    placeholder="TATA"
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    value={formik.values.company}
+                  />
+                </div>
+              </>
+            )}
+
             <div className="mb-6">
               <label className="block text-sm font-semibold text-gray-700 mb-2">Corporate Email Address</label>
               <input 
@@ -121,7 +175,7 @@ const Login = () => {
             </div>
 
             <button type="submit" className="w-full py-4 bg-[#3d6356] text-white rounded-lg text-base font-semibold flex items-center justify-center gap-2 hover:bg-[#345448] transition-colors mb-8 cursor-pointer disabled:opacity-50" disabled={formik.isSubmitting}>
-              Sign In <FiArrowRight />
+              {activeTab === 'create' ? 'Create Account' : 'Sign In'} <FiArrowRight />
             </button>
           </form>
 

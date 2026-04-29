@@ -5,6 +5,7 @@ import MainLayout from './layouts/MainLayout';
 import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
+import RoleSelection from './pages/RoleSelection';
 import ActiveEscrows from './pages/ActiveEscrows';
 import Dispute from './pages/Dispute';
 import Setting from './pages/Setting';
@@ -17,6 +18,7 @@ function App() {
       <Route path="/" element={<LandingPage />} />
       
       {/* Auth routes */}
+      <Route path="/role-selection" element={<RoleSelection />} />
       <Route path="/login" element={<Login />} />
 
       {/* App routes wrapped in MainLayout */}
