@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { FiShield, FiArrowRight, FiInfo } from 'react-icons/fi';
 import { HiOutlineLibrary } from 'react-icons/hi';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import Navbar from '../components/Navbar/Navbar';
+import { apiFetch, setToken } from '../lib/api';
 
 const Login = () => {
   const [activeTab, setActiveTab] = useState('signin');
   const [searchParams] = useSearchParams();
   const role = searchParams.get('role');
   const type = searchParams.get('type');
+  const navigate = useNavigate();
+  const [serverError, setServerError] = useState('');
+  const [accountRole, setAccountRole] = useState(type === 'freelancer' ? 'freelancer' : 'client');
 
   useEffect(() => {
     // If we want to default to 'create' when coming from role selection
@@ -19,6 +23,12 @@ const Login = () => {
     }
   }, [role]);
 
+  useEffect(() => {
+    // Keep role in sync with URL (role-selection flow)
+    if (type === 'freelancer') setAccountRole('freelancer');
+    else if (type === 'client') setAccountRole('client');
+  }, [type]);
+
   const formik = useFormik({
     initialValues: {
       fullName: '',
@@ -26,17 +36,52 @@ const Login = () => {
       email: '',
       password: '',
     },
-    validationSchema: Yup.object({
-      email: Yup.string()
-        .email('Invalid email address')
-        .required('Email is required'),
-      password: Yup.string()
-        .min(8, 'Password must be at least 8 characters')
-        .required('Password is required'),
-    }),
-    onSubmit: (values) => {
-      console.log('Form values:', values);
-      alert('Login submitted! Check console for values.');
+    validationSchema:
+      activeTab === 'create'
+        ? Yup.object({
+            fullName: Yup.string().required('Full name is required'),
+            email: Yup.string().email('Invalid email address').required('Email is required'),
+            password: Yup.string()
+              .min(8, 'Password must be at least 8 characters')
+              .required('Password is required'),
+          })
+        : Yup.object({
+            email: Yup.string().email('Invalid email address').required('Email is required'),
+            password: Yup.string()
+              .min(8, 'Password must be at least 8 characters')
+              .required('Password is required'),
+          }),
+    onSubmit: async (values, helpers) => {
+      setServerError('');
+      try {
+        if (activeTab === 'create') {
+          const payload = {
+            fullName: values.fullName,
+            company: values.company,
+            email: values.email,
+            password: values.password,
+            role: accountRole,
+          };
+          const data = await apiFetch('/api/auth/register', {
+            method: 'POST',
+            body: JSON.stringify(payload),
+          });
+          setToken(data.token);
+          navigate('/dashboard', { replace: true });
+          return;
+        }
+
+        const data = await apiFetch('/api/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ email: values.email, password: values.password }),
+        });
+        setToken(data.token);
+        navigate('/dashboard', { replace: true });
+      } catch (e) {
+        setServerError(e?.message || 'Login failed');
+      } finally {
+        helpers.setSubmitting(false);
+      }
     },
   });
 
@@ -103,6 +148,11 @@ const Login = () => {
           </div>
 
           <form onSubmit={formik.handleSubmit}>
+            {serverError ? (
+              <div className="mb-6 bg-red-50 border border-red-100 text-red-700 text-sm font-semibold rounded-lg p-3">
+                {serverError}
+              </div>
+            ) : null}
             {activeTab === 'create' && (
               <>
                 <div className="mb-6">
@@ -110,12 +160,15 @@ const Login = () => {
                   <input 
                     name="fullName"
                     type="text" 
-                    className="w-full px-4 py-3.5 bg-gray-50 border rounded-lg text-[15px] text-gray-900 outline-none focus:bg-gray-100 transition-colors border-transparent" 
+                    className={`w-full px-4 py-3.5 bg-gray-50 border rounded-lg text-[15px] text-gray-900 outline-none focus:bg-gray-100 transition-colors ${formik.touched.fullName && formik.errors.fullName ? 'border-red-500' : 'border-transparent'}`} 
                     placeholder="Manan Patel"
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
                     value={formik.values.fullName}
                   />
+                  {formik.touched.fullName && formik.errors.fullName ? (
+                    <div className="text-red-500 text-xs mt-1">{formik.errors.fullName}</div>
+                  ) : null}
                 </div>
                 <div className="mb-6">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Organization / Company Name</label>
@@ -129,6 +182,20 @@ const Login = () => {
                     value={formik.values.company}
                   />
                 </div>
+
+                {!type ? (
+                  <div className="mb-6">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Account Type</label>
+                    <select
+                      value={accountRole}
+                      onChange={(e) => setAccountRole(e.target.value)}
+                      className="w-full px-4 py-3.5 bg-gray-50 border rounded-lg text-[15px] text-gray-900 outline-none focus:bg-gray-100 transition-colors border-transparent"
+                    >
+                      <option value="client">Client</option>
+                      <option value="freelancer">Freelancer</option>
+                    </select>
+                  </div>
+                ) : null}
               </>
             )}
 

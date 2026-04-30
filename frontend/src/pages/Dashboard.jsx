@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   FiCheckCircle, 
   FiMoreHorizontal, 
@@ -9,15 +9,88 @@ import {
   FiClock
 } from 'react-icons/fi';
 import { BiWalletAlt } from 'react-icons/bi';
+import { useNavigate } from 'react-router-dom';
+import { apiFetch, getToken, setToken } from '../lib/api';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
+  const [me, setMe] = useState(null);
+  const [notes, setNotes] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('tl_notes') || '[]');
+    } catch {
+      return [];
+    }
+  });
+  const [noteTitle, setNoteTitle] = useState('');
+  const [noteBody, setNoteBody] = useState('');
+  const [notesError, setNotesError] = useState('');
+
+  useEffect(() => {
+    const token = getToken();
+    if (!token) {
+      navigate('/login', { replace: true });
+      return;
+    }
+
+    let cancelled = false;
+    apiFetch('/api/dashboard', { token })
+      .then((data) => {
+        if (!cancelled) setMe(data?.user || null);
+      })
+      .catch(() => {
+        setToken(null);
+        navigate('/login', { replace: true });
+      });
+
+    apiFetch('/api/notes', { token })
+      .then((data) => {
+        if (cancelled) return;
+        const list = data?.notes || [];
+        setNotes(list);
+        localStorage.setItem('tl_notes', JSON.stringify(list));
+      })
+      .catch(() => {
+        if (!cancelled) setNotesError('Could not load notes');
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [navigate]);
+
+  const handleCreateNote = async () => {
+    const token = getToken();
+    if (!token) return;
+    setNotesError('');
+    try {
+      const data = await apiFetch('/api/notes', {
+        token,
+        method: 'POST',
+        body: JSON.stringify({ title: noteTitle, body: noteBody }),
+      });
+      const created = data?.note;
+      if (created) {
+        const next = [created, ...notes].slice(0, 20);
+        setNotes(next);
+        localStorage.setItem('tl_notes', JSON.stringify(next));
+      }
+      setNoteTitle('');
+      setNoteBody('');
+    } catch (e) {
+      setNotesError(e?.message || 'Could not create note');
+    }
+  };
+
   return (
     <div className="w-full max-w-[1100px] mx-auto pb-10 relative">
       
       {/* HEADER */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-10 gap-6">
         <div>
-          <h1 className="text-[32px] font-bold text-gray-900 mb-1">Welcome back,</h1>
+          <h1 className="text-[32px] font-bold text-gray-900 mb-1">
+            Welcome back{me?.fullName ? `, ${me.fullName}` : ''}.
+          </h1>
           <p className="text-[15px] text-gray-500 max-w-[500px]">
             Manage your high-value assets and secure transactions with precision.
           </p>
@@ -38,6 +111,61 @@ const Dashboard = () => {
           </button>
         </div>
       </div>
+
+        {/* BASIC MONGODB STORAGE DEMO (Notes) */}
+        <div className="w-full border border-gray-100 rounded-2xl bg-white shadow-sm p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-gray-900">My Notes (stored in MongoDB)</h3>
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{notes.length}/20</span>
+          </div>
+
+          {notesError ? (
+            <div className="mb-4 bg-red-50 border border-red-100 text-red-700 text-sm font-semibold rounded-lg p-3">
+              {notesError}
+            </div>
+          ) : null}
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-4">
+            <input
+              value={noteTitle}
+              onChange={(e) => setNoteTitle(e.target.value)}
+              placeholder="Title"
+              className="px-4 py-3 bg-gray-50 border rounded-lg text-[15px] text-gray-900 outline-none focus:bg-gray-100 transition-colors border-transparent"
+            />
+            <input
+              value={noteBody}
+              onChange={(e) => setNoteBody(e.target.value)}
+              placeholder="Body (optional)"
+              className="px-4 py-3 bg-gray-50 border rounded-lg text-[15px] text-gray-900 outline-none focus:bg-gray-100 transition-colors border-transparent lg:col-span-2"
+            />
+          </div>
+
+          <button
+            onClick={handleCreateNote}
+            disabled={!noteTitle.trim()}
+            className="mb-6 px-5 py-2.5 rounded-lg bg-[#316C5B] text-white font-semibold text-sm hover:bg-[#255245] shadow-md transition-colors disabled:opacity-50"
+          >
+            Save Note
+          </button>
+
+          <div className="flex flex-col gap-3">
+            {notes.length === 0 ? (
+              <div className="text-sm text-gray-500">No notes yet. Create your first one above.</div>
+            ) : (
+              notes.map((n) => (
+                <div key={n.id} className="border border-gray-100 rounded-xl p-4 bg-gray-50/40">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="text-sm font-bold text-gray-900">{n.title}</div>
+                    <div className="text-[11px] text-gray-400 font-semibold">
+                      {n.createdAt ? new Date(n.createdAt).toLocaleString() : ''}
+                    </div>
+                  </div>
+                  {n.body ? <div className="text-sm text-gray-600 mt-1">{n.body}</div> : null}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-6 mb-6">
         

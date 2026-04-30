@@ -7,11 +7,18 @@ import {
   FiCheckCircle,
   FiClock,
   FiPaperclip,
-  FiX
+  FiX,
+  FiFile,
+  FiTrash2,
 } from 'react-icons/fi';
 
 const Dispute = () => {
-  const [showRaiseModal, setShowRaiseModal] = useState(false);
+  const [showRaiseModal, setShowRaiseModal]     = useState(false);
+  const [showProofModal, setShowProofModal]     = useState(null); // holds dispute id
+  const [proofFiles, setProofFiles]             = useState([]);
+  const [proofDescription, setProofDescription] = useState('');
+  const [proofSubmitting, setProofSubmitting]   = useState(false);
+  const [proofSuccess, setProofSuccess]         = useState(false);
 
   // Mock Data
   const disputes = [
@@ -20,7 +27,7 @@ const Dispute = () => {
       transactionId: 'TXN-103',
       provider: 'BlockSec Partners',
       date: 'Oct 26, 2024',
-      status: 'Under Review', // 🔵
+      status: 'Under Review',
       reason: 'Service quality is poor',
       description: 'The smart contract audit report was missing several critical modules agreed upon in the contract.',
       evidenceCount: 3,
@@ -31,7 +38,7 @@ const Dispute = () => {
       transactionId: 'TXN-089',
       provider: 'Alpha Logistics',
       date: 'Oct 22, 2024',
-      status: 'Open', // 🟡
+      status: 'Open',
       reason: 'Service was not delivered',
       description: 'Provider claimed delivery but nothing was received at the designated endpoint.',
       evidenceCount: 0,
@@ -42,7 +49,7 @@ const Dispute = () => {
       transactionId: 'TXN-045',
       provider: 'Studio Creative',
       date: 'Sep 15, 2024',
-      status: 'Resolved', // 🟢
+      status: 'Resolved',
       reason: 'Overcharging occurred',
       description: 'Billed for 10 extra hours not logged in the system.',
       evidenceCount: 2,
@@ -58,9 +65,37 @@ const Dispute = () => {
         return <span className="flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full text-xs font-bold uppercase tracking-wider"><div className="w-2 h-2 rounded-full bg-blue-500"></div> Under Review</span>;
       case 'Resolved':
         return <span className="flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-700 border border-green-200 rounded-full text-xs font-bold uppercase tracking-wider"><div className="w-2 h-2 rounded-full bg-green-500"></div> Resolved</span>;
-      default:
-        return null;
+      default: return null;
     }
+  };
+
+  const formatBytes = (bytes) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const handleFileChange = (e) => {
+    const selected = Array.from(e.target.files);
+    setProofFiles(prev => [...prev, ...selected].slice(0, 5)); // max 5
+  };
+
+  const removeFile = (idx) => setProofFiles(prev => prev.filter((_, i) => i !== idx));
+
+  const handleProofSubmit = async (e) => {
+    e.preventDefault();
+    if (proofFiles.length === 0) return;
+    setProofSubmitting(true);
+    // Simulate API call — replace with: await apiFetch(`/api/disputes/${showProofModal}/proof`, { method:'POST', body: formData })
+    await new Promise(r => setTimeout(r, 1200));
+    setProofSubmitting(false);
+    setProofSuccess(true);
+    setTimeout(() => {
+      setShowProofModal(null);
+      setProofFiles([]);
+      setProofDescription('');
+      setProofSuccess(false);
+    }, 1500);
   };
 
   return (
@@ -133,9 +168,7 @@ const Dispute = () => {
               <p className="text-sm text-gray-500 font-medium mb-4">Against: <span className="text-gray-900">{dispute.provider}</span> • Date: {dispute.date}</p>
               
               <div className="bg-gray-50 p-4 rounded-xl mb-6">
-                <p className="text-sm text-gray-700 leading-relaxed">
-                  "{dispute.description}"
-                </p>
+                <p className="text-sm text-gray-700 leading-relaxed">"{dispute.description}"</p>
               </div>
 
               <div className="flex items-center gap-4">
@@ -144,7 +177,10 @@ const Dispute = () => {
                   {dispute.evidenceCount > 0 ? `${dispute.evidenceCount} Files Attached` : 'No Evidence Uploaded'}
                 </div>
                 {dispute.status !== 'Resolved' && (
-                  <button className="text-sm font-bold text-[#316C5B] hover:underline flex items-center gap-1">
+                  <button 
+                    onClick={() => setShowProofModal(dispute.id)}
+                    className="text-sm font-bold text-[#316C5B] hover:underline flex items-center gap-1"
+                  >
                     <FiUploadCloud /> Add More Proof
                   </button>
                 )}
@@ -157,7 +193,10 @@ const Dispute = () => {
               <p className="text-3xl font-bold text-gray-900 mb-6">₹{dispute.amount}</p>
               
               {dispute.status === 'Open' && (
-                <button className="w-full py-3 bg-[#316C5B] text-white font-bold rounded-xl hover:bg-[#255245] transition-colors flex justify-center items-center gap-2 shadow-sm">
+                <button 
+                  onClick={() => setShowProofModal(dispute.id)}
+                  className="w-full py-3 bg-[#316C5B] text-white font-bold rounded-xl hover:bg-[#255245] transition-colors flex justify-center items-center gap-2 shadow-sm"
+                >
                   <FiUploadCloud /> Submit Proof
                 </button>
               )}
@@ -177,10 +216,124 @@ const Dispute = () => {
         ))}
       </div>
 
-      {/* RAISE DISPUTE MODAL (Mocked for UI demo) */}
+      {/* ── SUBMIT PROOF MODAL ─────────────────────────────────────── */}
+      {showProofModal && (
+        <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-[560px] overflow-hidden shadow-2xl">
+            
+            {/* Header */}
+            <div className="px-8 py-5 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Submit Proof</h2>
+                <p className="text-xs text-gray-500 mt-0.5">Dispute ID: <span className="font-bold text-gray-700">{showProofModal}</span></p>
+              </div>
+              <button onClick={() => { setShowProofModal(null); setProofFiles([]); setProofDescription(''); setProofSuccess(false); }} className="text-gray-400 hover:text-gray-700 transition-colors">
+                <FiX size={24} />
+              </button>
+            </div>
+
+            {proofSuccess ? (
+              <div className="p-10 flex flex-col items-center text-center">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-4">
+                  <FiCheckCircle size={32} />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-1">Proof Submitted!</h3>
+                <p className="text-sm text-gray-500">Your evidence has been recorded. The dispute will move to "Under Review".</p>
+              </div>
+            ) : (
+              <form onSubmit={handleProofSubmit} className="p-8">
+
+                {/* Description */}
+                <div className="mb-5">
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Description of Evidence</label>
+                  <textarea
+                    value={proofDescription}
+                    onChange={e => setProofDescription(e.target.value)}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-[#316C5B] min-h-[90px] resize-none transition-colors"
+                    placeholder="Briefly explain what this proof demonstrates..."
+                  />
+                </div>
+
+                {/* File Upload Zone */}
+                <div className="mb-5">
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
+                    Upload Files <span className="text-gray-400 font-normal">(up to 5 files, max 10 MB each)</span>
+                  </label>
+
+                  <label
+                    htmlFor="proof-upload"
+                    className="flex flex-col items-center justify-center gap-2 w-full p-6 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 text-center cursor-pointer hover:bg-[#f0f9f5] hover:border-[#316C5B] transition-colors"
+                  >
+                    <FiUploadCloud size={32} className="text-[#316C5B]" />
+                    <p className="text-sm font-bold text-gray-700">Click to browse files</p>
+                    <p className="text-xs text-gray-400">Screenshots, PDFs, documents, images</p>
+                    <input
+                      id="proof-upload"
+                      type="file"
+                      multiple
+                      accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.txt"
+                      className="hidden"
+                      onChange={handleFileChange}
+                    />
+                  </label>
+                </div>
+
+                {/* Selected File List */}
+                {proofFiles.length > 0 && (
+                  <div className="mb-6 flex flex-col gap-2">
+                    {proofFiles.map((file, idx) => (
+                      <div key={idx} className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-8 h-8 bg-[#ecfdf5] rounded-lg flex items-center justify-center text-[#316C5B] shrink-0">
+                            <FiFile size={16} />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-gray-800 truncate max-w-[280px]">{file.name}</p>
+                            <p className="text-xs text-gray-400">{formatBytes(file.size)}</p>
+                          </div>
+                        </div>
+                        <button type="button" onClick={() => removeFile(idx)} className="text-gray-400 hover:text-red-500 transition-colors ml-3 shrink-0">
+                          <FiTrash2 size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {proofFiles.length === 0 && (
+                  <p className="text-xs text-red-400 mb-4 font-medium">* At least one file is required to submit proof.</p>
+                )}
+
+                <div className="flex gap-4">
+                  <button
+                    type="button"
+                    onClick={() => { setShowProofModal(null); setProofFiles([]); setProofDescription(''); }}
+                    className="flex-1 py-3.5 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={proofSubmitting || proofFiles.length === 0}
+                    className="flex-1 py-3.5 bg-[#316C5B] text-white font-bold rounded-xl hover:bg-[#255245] shadow-md transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {proofSubmitting ? (
+                      <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Uploading…</>
+                    ) : (
+                      <><FiUploadCloud /> Submit Proof</>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── RAISE DISPUTE MODAL ────────────────────────────────────── */}
       {showRaiseModal && (
         <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-[600px] overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
+          <div className="bg-white rounded-3xl w-full max-w-[600px] overflow-hidden shadow-2xl">
             <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
               <div>
                 <h2 className="text-xl font-bold text-gray-900">Raise a New Dispute</h2>
@@ -216,12 +369,6 @@ const Dispute = () => {
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-[#316C5B] min-h-[100px] resize-none"
                   placeholder="Clearly explain what went wrong..."
                 ></textarea>
-              </div>
-
-              <div className="mb-8 p-6 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 text-center flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 hover:border-[#316C5B] transition-colors">
-                <FiUploadCloud size={32} className="text-[#316C5B] mb-2" />
-                <p className="text-sm font-bold text-gray-700">Upload Supporting Proof</p>
-                <p className="text-xs text-gray-500 mt-1">Screenshots, documents, or reports (Max 10MB)</p>
               </div>
 
               <div className="flex gap-4">
