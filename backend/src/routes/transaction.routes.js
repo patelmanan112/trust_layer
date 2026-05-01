@@ -1,17 +1,12 @@
-const express = require('express');
-const { requireAuth } = require('../middleware/auth');
-const {
-  getTransactions, getTransaction, createTransaction, updateTransactionStatus, getTransactionSummary
-} = require('../controllers/transaction.controller');
-
+const express = require("express");
 const router = express.Router();
 
-router.use(requireAuth);
+const { getTransactions, createTransaction, completeTransaction, verifyTransaction } = require("../controllers/transaction.controller");
+const { requireAuth } = require("../middleware/auth");
 
-router.get('/summary', getTransactionSummary);
-router.get('/',        getTransactions);
-router.get('/:id',     getTransaction);
-router.post('/',       createTransaction);
-router.patch('/:id/status', updateTransactionStatus);
+router.get("/", requireAuth, getTransactions);
+router.post("/", requireAuth, createTransaction);
+router.post("/:id/complete", requireAuth, completeTransaction);
+router.post("/:id/verify", requireAuth, verifyTransaction);
 
 module.exports = router;

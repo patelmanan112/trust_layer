@@ -1,14 +1,15 @@
 const mongoose = require("mongoose");
 
-const ROLES = ["admin", "client", "freelancer", "arbitrator"];
+const ROLES = ["admin", "client", "provider"];
 
 const userSchema = new mongoose.Schema(
   {
-    fullName: { type: String, trim: true },
+    name: { type: String, trim: true },
     company: { type: String, trim: true },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     passwordHash: { type: String, required: true },
     role: { type: String, enum: ROLES, required: true },
+    trustScore: { type: Number, default: 100 },
   },
   { timestamps: true }
 );

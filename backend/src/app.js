@@ -7,6 +7,8 @@ const dashboardRoutes   = require('./routes/dashboard.routes');
 const escrowRoutes      = require('./routes/escrow.routes');
 const transactionRoutes = require('./routes/transaction.routes');
 const disputeRoutes     = require('./routes/dispute.routes');
+const userRoutes        = require('./routes/user.routes');
+const serviceRoutes     = require('./routes/service.routes');
 
 const app = express();
 
@@ -27,6 +29,8 @@ app.use('/api/dashboard',    dashboardRoutes);
 app.use('/api/escrows',      escrowRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/disputes',     disputeRoutes);
+app.use('/api/users',        userRoutes);
+app.use('/api/services',     serviceRoutes);
 
 // ── Health check ────────────────────────────────────────────
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date() }));

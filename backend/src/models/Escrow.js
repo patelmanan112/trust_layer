@@ -19,12 +19,11 @@ const escrowSchema = new mongoose.Schema(
 );
 
 // Auto-generate escrowId before saving
-escrowSchema.pre('save', async function (next) {
+escrowSchema.pre('save', async function () {
   if (!this.escrowId) {
     const count = await mongoose.model('Escrow').countDocuments();
     this.escrowId = `ESC-${String(count + 1000).padStart(4, '0')}`;
   }
-  next();
 });
 
 module.exports = mongoose.model('Escrow', escrowSchema);

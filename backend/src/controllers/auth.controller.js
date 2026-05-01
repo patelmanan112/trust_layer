@@ -6,10 +6,11 @@ const { signAccessToken } = require("../utils/tokens");
 function sanitizeUser(userDoc) {
   return {
     id: userDoc._id.toString(),
-    fullName: userDoc.fullName,
+    name: userDoc.name,
     company: userDoc.company,
     email: userDoc.email,
     role: userDoc.role,
+    trustScore: userDoc.trustScore,
     createdAt: userDoc.createdAt,
     updatedAt: userDoc.updatedAt,
   };
@@ -17,7 +18,7 @@ function sanitizeUser(userDoc) {
 
 async function register(req, res, next) {
   try {
-    const { fullName, company, email, password, role } = req.body || {};
+    const { name, company, email, password, role } = req.body || {};
 
     if (!email || !password || !role) {
       const err = new Error("email, password, and role are required");
@@ -44,7 +45,7 @@ async function register(req, res, next) {
 
     const passwordHash = await bcrypt.hash(password, 12);
     const user = await User.create({
-      fullName,
+      name,
       company,
       email,
       passwordHash,
