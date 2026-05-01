@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { apiFetch, getToken } from '../lib/api';
 import { 
   FiAlertTriangle, 
   FiFileText, 
@@ -20,42 +21,46 @@ const Dispute = () => {
   const [proofSubmitting, setProofSubmitting]   = useState(false);
   const [proofSuccess, setProofSuccess]         = useState(false);
 
-  // Mock Data
-  const disputes = [
-    {
-      id: 'DSP-8821',
-      transactionId: 'TXN-103',
-      provider: 'BlockSec Partners',
-      date: 'Oct 26, 2024',
-      status: 'Under Review',
-      reason: 'Service quality is poor',
-      description: 'The smart contract audit report was missing several critical modules agreed upon in the contract.',
-      evidenceCount: 3,
-      amount: '85,000'
-    },
-    {
-      id: 'DSP-8790',
-      transactionId: 'TXN-089',
-      provider: 'Alpha Logistics',
-      date: 'Oct 22, 2024',
-      status: 'Open',
-      reason: 'Service was not delivered',
-      description: 'Provider claimed delivery but nothing was received at the designated endpoint.',
-      evidenceCount: 0,
-      amount: '12,400'
-    },
-    {
-      id: 'DSP-8102',
-      transactionId: 'TXN-045',
-      provider: 'Studio Creative',
-      date: 'Sep 15, 2024',
-      status: 'Resolved',
-      reason: 'Overcharging occurred',
-      description: 'Billed for 10 extra hours not logged in the system.',
-      evidenceCount: 2,
-      amount: '15,000'
+  const [disputes, setDisputes] = useState([]);
+  const [summary, setSummary] = useState({ Open: 0, 'Under Review': 0, Resolved: 0 });
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Raise dispute state
+  const [raiseTxnId, setRaiseTxnId] = useState('');
+  const [raiseReason, setRaiseReason] = useState('Service was not delivered');
+  const [raiseDescription, setRaiseDescription] = useState('');
+  const [raiseSubmitting, setRaiseSubmitting] = useState(false);
+  const [raiseError, setRaiseError] = useState('');
+
+  const loadData = () => {
+    const token = getToken();
+    if (!token) {
+      setLoading(false);
+      return;
     }
-  ];
+    
+    Promise.all([
+      apiFetch('/api/disputes', { token }),
+      apiFetch('/api/disputes/summary', { token }),
+      apiFetch('/api/transactions', { token })
+    ])
+    .then(([disputesData, summaryData, txnsData]) => {
+      setDisputes(disputesData?.disputes || []);
+      setSummary(summaryData || { Open: 0, 'Under Review': 0, Resolved: 0 });
+      setTransactions(txnsData?.transactions || []);
+      setLoading(false);
+    })
+    .catch(err => {
+      setError(err.message);
+      setLoading(false);
+    });
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   const getStatusBadge = (status) => {
     switch(status) {
@@ -86,16 +91,64 @@ const Dispute = () => {
     e.preventDefault();
     if (proofFiles.length === 0) return;
     setProofSubmitting(true);
-    // Simulate API call — replace with: await apiFetch(`/api/disputes/${showProofModal}/proof`, { method:'POST', body: formData })
-    await new Promise(r => setTimeout(r, 1200));
-    setProofSubmitting(false);
-    setProofSuccess(true);
-    setTimeout(() => {
-      setShowProofModal(null);
-      setProofFiles([]);
-      setProofDescription('');
-      setProofSuccess(false);
-    }, 1500);
+    
+    try {
+      const token = getToken();
+      const formData = new FormData();
+      proofFiles.forEach(f => formData.append('proof', f));
+      // Optional: Send description as part of the body if backend API supports it or ignore it since the API doesn't take description for proof.
+      // We will just upload the files.
+      
+      await apiFetch(`/api/disputes/${showProofModal}/proof`, {
+        method: 'POST',
+        token,
+        body: formData
+      });
+      
+      setProofSubmitting(false);
+      setProofSuccess(true);
+      loadData(); // reload data
+      setTimeout(() => {
+        setShowProofModal(null);
+        setProofFiles([]);
+        setProofDescription('');
+        setProofSuccess(false);
+      }, 1500);
+    } catch (err) {
+      alert("Failed to submit proof: " + err.message);
+      setProofSubmitting(false);
+    }
+  };
+
+  const handleRaiseDispute = async () => {
+    if (!raiseTxnId) return alert('Please select a transaction');
+    if (!raiseDescription.trim()) return alert('Description is required');
+    
+    setRaiseSubmitting(true);
+    setRaiseError('');
+    try {
+      const token = getToken();
+      const txn = transactions.find(t => t.transactionId === raiseTxnId);
+      await apiFetch('/api/disputes', {
+        method: 'POST',
+        token,
+        body: JSON.stringify({
+          transactionId: raiseTxnId,
+          provider: txn ? txn.provider : 'Unknown',
+          reason: raiseReason,
+          description: raiseDescription,
+          amount: txn ? txn.amount : 0
+        })
+      });
+      setRaiseSubmitting(false);
+      setShowRaiseModal(false);
+      setRaiseTxnId('');
+      setRaiseDescription('');
+      loadData(); // reload disputes
+    } catch (err) {
+      setRaiseError(err.message);
+      setRaiseSubmitting(false);
+    }
   };
 
   return (
@@ -122,7 +175,7 @@ const Dispute = () => {
         <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Open Disputes</p>
-            <h2 className="text-3xl font-bold text-gray-900">1</h2>
+            <h2 className="text-3xl font-bold text-gray-900">{summary.Open || 0}</h2>
           </div>
           <div className="w-12 h-12 bg-yellow-50 rounded-full flex items-center justify-center text-yellow-500">
             <FiAlertTriangle size={24} />
@@ -131,7 +184,7 @@ const Dispute = () => {
         <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Under Review</p>
-            <h2 className="text-3xl font-bold text-gray-900">1</h2>
+            <h2 className="text-3xl font-bold text-gray-900">{summary['Under Review'] || 0}</h2>
           </div>
           <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-blue-500">
             <FiClock size={24} />
@@ -140,7 +193,7 @@ const Dispute = () => {
         <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex items-center justify-between">
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Resolved</p>
-            <h2 className="text-3xl font-bold text-gray-900">1</h2>
+            <h2 className="text-3xl font-bold text-gray-900">{summary.Resolved || 0}</h2>
           </div>
           <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center text-green-500">
             <FiCheckCircle size={24} />
@@ -150,14 +203,20 @@ const Dispute = () => {
 
       {/* DISPUTES LIST */}
       <div className="flex flex-col gap-6">
-        {disputes.map((dispute) => (
-          <div key={dispute.id} className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden flex flex-col lg:flex-row">
+        {loading ? (
+          <div className="text-center py-10 text-gray-500">Loading disputes...</div>
+        ) : error ? (
+          <div className="text-center py-10 text-red-500">Error: {error}</div>
+        ) : disputes.length === 0 ? (
+          <div className="text-center py-10 text-gray-500 border border-dashed border-gray-300 rounded-2xl">No disputes found.</div>
+        ) : disputes.map((dispute) => (
+          <div key={dispute._id} className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden flex flex-col lg:flex-row">
             
             {/* Left Side: Info */}
             <div className="flex-[2] p-6 lg:p-8 border-b lg:border-b-0 lg:border-r border-gray-100">
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
-                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">{dispute.id}</span>
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">{dispute._id.substring(dispute._id.length-8)}</span>
                   <span className="text-xs text-gray-400">•</span>
                   <span className="text-xs font-bold text-gray-500">TXN: {dispute.transactionId}</span>
                 </div>
@@ -165,7 +224,7 @@ const Dispute = () => {
               </div>
               
               <h3 className="text-xl font-bold text-gray-900 mb-1">{dispute.reason}</h3>
-              <p className="text-sm text-gray-500 font-medium mb-4">Against: <span className="text-gray-900">{dispute.provider}</span> • Date: {dispute.date}</p>
+              <p className="text-sm text-gray-500 font-medium mb-4">Against: <span className="text-gray-900">{dispute.provider}</span> • Date: {new Date(dispute.createdAt).toLocaleDateString()}</p>
               
               <div className="bg-gray-50 p-4 rounded-xl mb-6">
                 <p className="text-sm text-gray-700 leading-relaxed">"{dispute.description}"</p>
@@ -174,11 +233,11 @@ const Dispute = () => {
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2 text-sm font-semibold text-gray-600">
                   <FiPaperclip /> 
-                  {dispute.evidenceCount > 0 ? `${dispute.evidenceCount} Files Attached` : 'No Evidence Uploaded'}
+                  {dispute.proof && dispute.proof.length > 0 ? `${dispute.proof.length} Files Attached` : 'No Evidence Uploaded'}
                 </div>
                 {dispute.status !== 'Resolved' && (
                   <button 
-                    onClick={() => setShowProofModal(dispute.id)}
+                    onClick={() => setShowProofModal(dispute._id)}
                     className="text-sm font-bold text-[#316C5B] hover:underline flex items-center gap-1"
                   >
                     <FiUploadCloud /> Add More Proof
@@ -190,11 +249,11 @@ const Dispute = () => {
             {/* Right Side: Actions & Amount */}
             <div className="flex-[1] p-6 lg:p-8 bg-gray-50 flex flex-col justify-center items-center text-center lg:items-start lg:text-left">
               <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Disputed Amount</p>
-              <p className="text-3xl font-bold text-gray-900 mb-6">₹{dispute.amount}</p>
+              <p className="text-3xl font-bold text-gray-900 mb-6">₹{new Intl.NumberFormat('en-IN').format(dispute.amount)}</p>
               
               {dispute.status === 'Open' && (
                 <button 
-                  onClick={() => setShowProofModal(dispute.id)}
+                  onClick={() => setShowProofModal(dispute._id)}
                   className="w-full py-3 bg-[#316C5B] text-white font-bold rounded-xl hover:bg-[#255245] transition-colors flex justify-center items-center gap-2 shadow-sm"
                 >
                   <FiUploadCloud /> Submit Proof
@@ -345,27 +404,41 @@ const Dispute = () => {
             </div>
             
             <div className="p-8">
+              {raiseError && <div className="mb-4 text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-100">{raiseError}</div>}
+              
               <div className="mb-5">
                 <label className="block text-sm font-bold text-gray-700 mb-2">Select Transaction</label>
-                <select className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-[#316C5B]">
-                  <option>TXN-104 - Data Migration Service</option>
-                  <option>TXN-105 - Legal Consulting</option>
+                <select 
+                  value={raiseTxnId}
+                  onChange={(e) => setRaiseTxnId(e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-[#316C5B]"
+                >
+                  <option value="">-- Choose Transaction --</option>
+                  {transactions.map(txn => (
+                    <option key={txn._id} value={txn.transactionId}>{txn.transactionId} - {txn.service}</option>
+                  ))}
                 </select>
               </div>
               
               <div className="mb-5">
                 <label className="block text-sm font-bold text-gray-700 mb-2">Reason for Dispute</label>
-                <select className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-[#316C5B]">
-                  <option>Service was not delivered</option>
-                  <option>Service quality is poor</option>
-                  <option>Overcharging has occurred</option>
-                  <option>Other</option>
+                <select 
+                  value={raiseReason}
+                  onChange={(e) => setRaiseReason(e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-[#316C5B]"
+                >
+                  <option value="Service was not delivered">Service was not delivered</option>
+                  <option value="Service quality is poor">Service quality is poor</option>
+                  <option value="Overcharging has occurred">Overcharging has occurred</option>
+                  <option value="Other">Other</option>
                 </select>
               </div>
 
               <div className="mb-6">
                 <label className="block text-sm font-bold text-gray-700 mb-2">Detailed Description</label>
                 <textarea 
+                  value={raiseDescription}
+                  onChange={(e) => setRaiseDescription(e.target.value)}
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-[#316C5B] min-h-[100px] resize-none"
                   placeholder="Clearly explain what went wrong..."
                 ></textarea>
@@ -375,8 +448,12 @@ const Dispute = () => {
                 <button onClick={() => setShowRaiseModal(false)} className="flex-1 py-3.5 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50">
                   Cancel
                 </button>
-                <button className="flex-1 py-3.5 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 shadow-md">
-                  Submit Dispute
+                <button 
+                  onClick={handleRaiseDispute}
+                  disabled={raiseSubmitting}
+                  className="flex-1 py-3.5 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 shadow-md disabled:opacity-50"
+                >
+                  {raiseSubmitting ? 'Submitting...' : 'Submit Dispute'}
                 </button>
               </div>
             </div>

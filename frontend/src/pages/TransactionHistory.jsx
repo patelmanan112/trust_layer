@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { apiFetch, getToken } from '../lib/api';
 import { 
   FiSearch, 
   FiFilter, 
@@ -12,57 +13,38 @@ import { BiRupee } from 'react-icons/bi';
 const TransactionHistory = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('All');
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const transactions = [
-    {
-      id: 'TXN-101',
-      service: 'Web App Development',
-      provider: 'TechFlow Solutions',
-      date: 'Oct 28, 2024',
-      amount: '1,20,000',
-      status: 'Held'
-    },
-    {
-      id: 'TXN-102',
-      service: 'UI/UX Design Mockups',
-      provider: 'Studio Nova',
-      date: 'Oct 20, 2024',
-      amount: '45,000',
-      status: 'Released'
-    },
-    {
-      id: 'TXN-103',
-      service: 'Smart Contract Audit',
-      provider: 'BlockSec Partners',
-      date: 'Oct 15, 2024',
-      amount: '85,000',
-      status: 'Disputed'
-    },
-    {
-      id: 'TXN-104',
-      service: 'Content Writing Package',
-      provider: 'Alpha Writers',
-      date: 'Oct 05, 2024',
-      amount: '12,500',
-      status: 'Refunded'
-    },
-    {
-      id: 'TXN-105',
-      service: 'Mobile App Wireframing',
-      provider: 'Design Matrix',
-      date: 'Sep 28, 2024',
-      amount: '30,000',
-      status: 'Released'
-    },
-    {
-      id: 'TXN-106',
-      service: 'Database Migration',
-      provider: 'CloudSys Engineering',
-      date: 'Sep 20, 2024',
-      amount: '95,000',
-      status: 'Held'
+  useEffect(() => {
+    const token = getToken();
+    if (!token) {
+      setLoading(false);
+      return;
     }
-  ];
+    
+    let cancelled = false;
+    apiFetch('/api/transactions', { token })
+      .then(data => {
+        if (!cancelled) {
+          setTransactions(data?.transactions || []);
+          setLoading(false);
+        }
+      })
+      .catch(err => {
+        if (!cancelled) {
+          setError(err.message);
+          setLoading(false);
+        }
+      });
+      
+    return () => { cancelled = true; };
+  }, []);
+
+  const formatCurrency = (amount, currency = 'INR') => {
+    return new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(amount);
+  };
 
   // Map statuses to badge colors
   const statusStyles = {
@@ -125,16 +107,20 @@ const TransactionHistory = () => {
 
       {/* CARD GRID */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredTransactions.length > 0 ? (
+        {loading ? (
+          <div className="col-span-full text-center py-10 text-gray-500">Loading transactions...</div>
+        ) : error ? (
+          <div className="col-span-full text-center py-10 text-red-500">Error: {error}</div>
+        ) : filteredTransactions.length > 0 ? (
           filteredTransactions.map((txn) => (
-            <div key={txn.id} className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col group">
+            <div key={txn._id} className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col group">
               
               {/* Card Header (Service & Badge) */}
               <div className="flex justify-between items-start mb-4 gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 text-gray-400 mb-2">
                     <FiBriefcase size={14} />
-                    <span className="text-[11px] font-bold uppercase tracking-wider">{txn.id}</span>
+                    <span className="text-[11px] font-bold uppercase tracking-wider">{txn.transactionId}</span>
                   </div>
                   <h3 className="text-[17px] font-bold text-gray-900 leading-snug">{txn.service}</h3>
                 </div>
@@ -151,7 +137,7 @@ const TransactionHistory = () => {
                 </div>
                 <div className="flex items-center gap-2 text-gray-500">
                   <FiCalendar size={15} className="text-gray-400" />
-                  <span>{txn.date}</span>
+                  <span>{new Date(txn.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                 </div>
               </div>
 
@@ -161,7 +147,7 @@ const TransactionHistory = () => {
                   <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Amount</p>
                   <div className="flex items-center text-xl font-bold text-gray-900">
                     <BiRupee size={22} className="text-gray-500 -mr-1" />
-                    {txn.amount}
+                    {formatCurrency(txn.amount, txn.currency)}
                   </div>
                 </div>
                 

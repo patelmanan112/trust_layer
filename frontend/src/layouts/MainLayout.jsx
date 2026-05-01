@@ -1,5 +1,6 @@
 import React from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { setToken } from '../lib/api';
 import { 
   FiGrid, 
   FiShield, 
@@ -7,13 +8,20 @@ import {
   FiAlertCircle, 
   FiSettings,
   FiHelpCircle,
-  FiCheckCircle
+  FiCheckCircle,
+  FiLogOut
 } from 'react-icons/fi';
 import { BiBuildingHouse } from 'react-icons/bi';
 
 const MainLayout = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const currentPath = location.pathname;
+
+  const handleLogout = () => {
+    setToken(null);
+    navigate('/login', { replace: true });
+  };
 
   const navLinks = [
     { name: 'Dashboard', path: '/dashboard', icon: <FiGrid /> },
@@ -70,6 +78,9 @@ const MainLayout = () => {
           <Link to="#" className="flex items-center gap-3 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
             <FiHelpCircle className="text-lg" /> Support
           </Link>
+          <button onClick={handleLogout} className="flex items-center gap-3 text-sm font-medium text-red-500 hover:text-red-700 transition-colors mt-2">
+            <FiLogOut className="text-lg" /> Log Out
+          </button>
         </div>
       </aside>
 
@@ -77,15 +88,6 @@ const MainLayout = () => {
       <main className="flex-1 bg-white flex flex-col h-screen overflow-y-auto relative">
         <div className="flex-1 p-8 xl:p-12">
           <Outlet />
-        </div>
-        
-        {/* Floating Chat Icon */}
-        <div className="absolute bottom-8 right-8">
-          <button className="w-14 h-14 bg-[#316C5B] text-white rounded-full flex items-center justify-center shadow-lg hover:bg-[#234e42] transition-colors">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-            </svg>
-          </button>
         </div>
       </main>
     </div>

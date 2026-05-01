@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { apiFetch, getToken } from '../lib/api';
 import { 
   FiShield, 
   FiClock, 
@@ -13,40 +14,43 @@ import { BiLockAlt } from 'react-icons/bi';
 
 const ActiveEscrows = () => {
   const [activeTab, setActiveTab] = useState('all');
+  const [escrows, setEscrows] = useState([]);
+  const [summary, setSummary] = useState({ totalHeld: 0, ongoing: 0, actionRequired: 0 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Mock Data using ₹ as requested in the context
-  const escrows = [
-    {
-      id: 'ESC-8832',
-      title: 'E-Commerce Website Development',
-      provider: 'TechFlow Solutions',
-      amount: '₹120,000',
-      dateCreated: 'Oct 20, 2024',
-      status: 'AWAITING PROVIDER',
-      statusDesc: 'Provider is working on the deliverables.',
-      type: 'ongoing'
-    },
-    {
-      id: 'ESC-8901',
-      title: 'Brand Logo & Identity',
-      provider: 'Studio Creative',
-      amount: '₹15,000',
-      dateCreated: 'Oct 24, 2024',
-      status: 'READY FOR VERIFICATION',
-      statusDesc: 'Service completed. Waiting for your approval.',
-      type: 'verify'
-    },
-    {
-      id: 'ESC-9021',
-      title: 'Smart Contract Audit',
-      provider: 'BlockSec Partners',
-      amount: '₹85,000',
-      dateCreated: 'Oct 26, 2024',
-      status: 'AWAITING PROVIDER',
-      statusDesc: 'Provider is working on the deliverables.',
-      type: 'ongoing'
+  useEffect(() => {
+    const token = getToken();
+    if (!token) {
+      setLoading(false);
+      return;
     }
-  ];
+    
+    let cancelled = false;
+    Promise.all([
+      apiFetch('/api/escrows', { token }),
+      apiFetch('/api/escrows/summary', { token })
+    ])
+    .then(([escrowsData, summaryData]) => {
+      if (!cancelled) {
+        setEscrows(escrowsData?.escrows || []);
+        setSummary(summaryData || { totalHeld: 0, ongoing: 0, actionRequired: 0 });
+        setLoading(false);
+      }
+    })
+    .catch(err => {
+      if (!cancelled) {
+        setError(err.message);
+        setLoading(false);
+      }
+    });
+      
+    return () => { cancelled = true; };
+  }, []);
+
+  const formatCurrency = (amount, currency = 'INR') => {
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency, maximumFractionDigits: 0 }).format(amount);
+  };
 
   const filteredEscrows = activeTab === 'all' ? escrows : escrows.filter(e => e.type === activeTab);
 
@@ -79,7 +83,7 @@ const ActiveEscrows = () => {
           </div>
           <div>
             <p className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-1">Total Held in Vault</p>
-            <h2 className="text-2xl font-bold text-gray-900">₹220,000</h2>
+            <h2 className="text-2xl font-bold text-gray-900">{formatCurrency(summary.totalHeld)}</h2>
           </div>
         </div>
         
@@ -89,7 +93,7 @@ const ActiveEscrows = () => {
           </div>
           <div>
             <p className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-1">Ongoing Services</p>
-            <h2 className="text-2xl font-bold text-gray-900">2</h2>
+            <h2 className="text-2xl font-bold text-gray-900">{summary.ongoing}</h2>
           </div>
         </div>
 
@@ -99,7 +103,7 @@ const ActiveEscrows = () => {
           </div>
           <div>
             <p className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-1">Action Required</p>
-            <h2 className="text-2xl font-bold text-gray-900">1</h2>
+            <h2 className="text-2xl font-bold text-gray-900">{summary.actionRequired}</h2>
           </div>
         </div>
       </div>
@@ -145,31 +149,37 @@ const ActiveEscrows = () => {
 
       {/* ESCROWS LIST */}
       <div className="flex flex-col gap-4">
-        {filteredEscrows.map((escrow) => (
-          <div key={escrow.id} className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        {loading ? (
+          <div className="text-center py-10 text-gray-500">Loading escrows...</div>
+        ) : error ? (
+          <div className="text-center py-10 text-red-500">Error: {error}</div>
+        ) : filteredEscrows.length === 0 ? (
+          <div className="text-center py-10 text-gray-500 border border-dashed border-gray-300 rounded-2xl">No escrows found.</div>
+        ) : filteredEscrows.map((escrow) => (
+          <div key={escrow._id} className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
-                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">{escrow.id}</span>
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">{escrow.escrowId}</span>
                 <span className={`px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest ${
                   escrow.type === 'verify' ? 'bg-orange-100 text-orange-700' : 'bg-blue-50 text-blue-600'
                 }`}>
-                  {escrow.status}
+                  {escrow.status.replace(/_/g, ' ')}
                 </span>
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-1">{escrow.title}</h3>
-              <p className="text-sm text-gray-500 mb-3">Provider: <span className="font-semibold text-gray-700">{escrow.provider}</span> • Created {escrow.dateCreated}</p>
+              <p className="text-sm text-gray-500 mb-3">Provider: <span className="font-semibold text-gray-700">{escrow.provider}</span> • Created {new Date(escrow.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
               
               <div className="flex items-center gap-2 text-sm">
                 <div className={`w-2 h-2 rounded-full ${escrow.type === 'verify' ? 'bg-orange-500' : 'bg-blue-500'}`}></div>
-                <span className="text-gray-600 font-medium">{escrow.statusDesc}</span>
+                <span className="text-gray-600 font-medium">{escrow.statusDesc || 'No status description.'}</span>
               </div>
             </div>
 
             <div className="flex flex-col md:items-end w-full md:w-auto gap-4 md:gap-6 border-t border-gray-100 pt-4 md:pt-0 md:border-t-0 md:border-l md:pl-6">
               <div>
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 md:text-right">Held Amount</p>
-                <p className="text-2xl font-bold text-gray-900">{escrow.amount}</p>
+                <p className="text-2xl font-bold text-gray-900">{formatCurrency(escrow.amount, escrow.currency)}</p>
               </div>
               
               {escrow.type === 'verify' ? (

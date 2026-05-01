@@ -12,7 +12,9 @@ export function setToken(token) {
 export async function apiFetch(path, { token, ...options } = {}) {
   const url = `${API_BASE_URL}${path}`;
   const headers = new Headers(options.headers || {});
-  headers.set("Content-Type", "application/json");
+  if (!(options.body instanceof FormData)) {
+    headers.set("Content-Type", "application/json");
+  }
   if (token) headers.set("Authorization", `Bearer ${token}`);
 
   const res = await fetch(url, { ...options, headers });
