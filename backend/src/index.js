@@ -1,4 +1,5 @@
 require('dotenv').config();
+// Server updated at 2026-05-01 21:27
 const app        = require('./app');
 const { connectDb } = require('./config/db');
 

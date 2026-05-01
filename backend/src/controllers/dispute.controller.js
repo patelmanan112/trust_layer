@@ -1,89 +1,128 @@
-const Dispute = require('../models/Dispute');
-const Transaction = require('../models/Transaction');
+const Dispute = require("../models/Dispute");
+const Transaction = require("../models/Transaction");
 
-// GET /api/disputes
-async function getDisputes(req, res, next) {
+// @desc    Get all disputes
+// @route   GET /api/disputes
+exports.getDisputes = async (req, res) => {
   try {
-    let query = {};
-    if (req.user.role === 'client') {
-      query.raisedBy = req.user.sub;
-    } else if (req.user.role === 'admin') {
-      // admin sees all disputes
-    } else {
-      // provider can see disputes against their transactions
-      // To keep it simple, we could find transactions for provider, then disputes,
-      // but for minimal flow, we will just return disputes if they are needed, or keep it admin/client focused.
-    }
-    const disputes = await Dispute.find(query).populate('transactionId').sort({ createdAt: -1 });
-    return res.json({ disputes });
-  } catch (e) { return next(e); }
-}
+    const disputes = await Dispute.find()
+      .populate("transactionId", "transactionId amount")
+      .populate("providerId", "name")
+      .populate("clientId", "name")
+      .sort({ createdAt: -1 });
 
-// POST /api/disputes  — client raises a new dispute
-async function createDispute(req, res, next) {
+    res.json({ disputes });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// @desc    Get dispute summary (counts)
+// @route   GET /api/disputes/summary
+exports.getDisputeSummary = async (req, res) => {
   try {
-    const { transactionId, reason, description, proof } = req.body || {};
-    
-    if (req.user.role !== 'client') {
-      const e = new Error('Only clients can raise disputes'); e.statusCode = 403; throw e;
+    const open = await Dispute.countDocuments({ status: "open" });
+    const underReview = await Dispute.countDocuments({ status: "under_review" });
+    const resolved = await Dispute.countDocuments({ status: "resolved" });
+
+    res.json({
+      Open: open,
+      "Under Review": underReview,
+      Resolved: resolved,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// @desc    Create a dispute
+// @route   POST /api/disputes
+exports.createDispute = async (req, res) => {
+  const { transactionId, reason, description } = req.body;
+
+  try {
+    const transaction = await Transaction.findById(transactionId);
+    if (!transaction) {
+      return res.status(404).json({ message: "Transaction not found" });
     }
 
-    if (!transactionId || !reason || !description) {
-      const e = new Error('transactionId, reason, description are required');
-      e.statusCode = 400; throw e;
-    }
-
-    const txn = await Transaction.findOne({ _id: transactionId, clientId: req.user.sub });
-    if (!txn) {
-      const e = new Error('Transaction not found'); e.statusCode = 404; throw e;
-    }
-
-    // Update transaction status
-    txn.status = 'disputed';
-    await txn.save();
-
-    const dispute = await Dispute.create({
+    const dispute = new Dispute({
       transactionId,
+      clientId: transaction.clientId,
+      providerId: transaction.providerId,
       reason,
       description,
-      amount: txn.amount,
-      status: 'open',
-      proof,
-      raisedBy: req.user.sub,
+      status: "open",
+      raisedBy: req.user.id, // Set the user who raised the dispute
     });
-    return res.status(201).json({ dispute });
-  } catch (e) { return next(e); }
-}
 
-// POST /api/disputes/:id/resolve  — admin resolves dispute
-async function resolveDispute(req, res, next) {
-  try {
-    if (req.user.role !== 'admin') {
-      const e = new Error('Only admins can resolve disputes'); e.statusCode = 403; throw e;
-    }
-
-    const { resolution, resolutionNote } = req.body || {}; // resolution: 'release' | 'refund'
-    if (!['release', 'refund'].includes(resolution)) {
-      const e = new Error('resolution must be "release" or "refund"'); e.statusCode = 400; throw e;
-    }
-
-    const dispute = await Dispute.findById(req.params.id);
-    if (!dispute) { const e = new Error('Dispute not found'); e.statusCode = 404; throw e; }
-
-    dispute.status = 'resolved';
-    dispute.resolutionNote = resolutionNote || `Admin decided to ${resolution} payment.`;
-    dispute.resolvedAt = new Date();
     await dispute.save();
 
-    // Update Transaction
-    const txn = await Transaction.findById(dispute.transactionId);
-    if (txn) {
-      txn.status = resolution === 'release' ? 'completed' : 'refunded';
-      await txn.save();
+    // Update transaction status
+    transaction.status = "disputed";
+    await transaction.save();
+
+    res.status(201).json({ dispute });
+  } catch (err) {
+    console.error("Create Dispute Error:", err);
+    res.status(400).json({ message: err.message });
+  }
+};
+
+// @desc    Upload proof for a dispute
+// @route   POST /api/disputes/:id/proof
+exports.uploadProof = async (req, res) => {
+  try {
+    const dispute = await Dispute.findById(req.params.id);
+    if (!dispute) {
+      return res.status(404).json({ message: "Dispute not found" });
     }
 
-    return res.json({ message: `Dispute resolved and payment ${resolution}ed.`, dispute, transaction: txn });
-  } catch (e) { return next(e); }
-}
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ message: "No files uploaded" });
+    }
 
-module.exports = { getDisputes, createDispute, resolveDispute };
+    const filePaths = req.files.map((file) => file.path);
+    dispute.proof = [...dispute.proof, ...filePaths];
+    dispute.status = "under_review";
+    await dispute.save();
+
+    res.json({ message: "Proof uploaded successfully", proof: dispute.proof });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// @desc    Resolve a dispute (Admin only)
+// @route   POST /api/disputes/:id/resolve
+exports.resolveDispute = async (req, res) => {
+  const { decision } = req.body; // 'refund' or 'release'
+
+  try {
+    const dispute = await Dispute.findById(req.params.id);
+    if (!dispute) {
+      return res.status(404).json({ message: "Dispute not found" });
+    }
+
+    const transaction = await Transaction.findById(dispute.transactionId);
+    if (!transaction) {
+      return res.status(404).json({ message: "Transaction not found" });
+    }
+
+    if (decision === "refund") {
+      transaction.status = "refunded";
+    } else if (decision === "release") {
+      transaction.status = "completed";
+    } else {
+      return res.status(400).json({ message: "Invalid decision" });
+    }
+
+    dispute.status = "resolved";
+    await dispute.save();
+    await transaction.save();
+
+    res.json({ message: "Dispute resolved", status: transaction.status });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

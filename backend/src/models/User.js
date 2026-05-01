@@ -9,6 +9,7 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     passwordHash: { type: String, required: true },
     role: { type: String, enum: ROLES, required: true },
+    industry: { type: String, trim: true },
     trustScore: { type: Number, default: 100 },
   },
   { timestamps: true }

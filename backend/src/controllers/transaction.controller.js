@@ -20,10 +20,12 @@ async function getTransactions(req, res, next) {
   } catch (e) { return next(e); }
 }
 
+const User = require('../models/User').User;
+
 // POST /api/transactions
 async function createTransaction(req, res, next) {
   try {
-    const { serviceId, amount } = req.body || {};
+    const { serviceId, amount, providerEmail, customTitle } = req.body || {};
     if (!serviceId || amount == null) {
       const e = new Error('serviceId and amount are required'); e.statusCode = 400; throw e;
     }
@@ -32,14 +34,41 @@ async function createTransaction(req, res, next) {
       const e = new Error('Only clients can create transactions (pay for services)'); e.statusCode = 403; throw e;
     }
 
-    const service = await Service.findById(serviceId);
-    if (!service) {
-      const e = new Error('Service not found'); e.statusCode = 404; throw e;
+    let finalServiceId = serviceId;
+    let providerId = null;
+
+    if (serviceId === 'custom') {
+      if (!providerEmail || !customTitle) {
+        const e = new Error('providerEmail and customTitle are required for custom escrows'); e.statusCode = 400; throw e;
+      }
+      
+      const provider = await User.findOne({ email: String(providerEmail).toLowerCase().trim(), role: 'provider' });
+      if (!provider) {
+        const e = new Error('Freelancer not found with that email'); e.statusCode = 404; throw e;
+      }
+      
+      // Create a one-off custom service
+      const customService = await Service.create({
+        providerId: provider._id,
+        title: customTitle,
+        description: 'Custom contract initiated by client',
+        price: Number(amount),
+        category: 'Custom'
+      });
+      
+      finalServiceId = customService._id;
+      providerId = provider._id;
+    } else {
+      const service = await Service.findById(serviceId);
+      if (!service) {
+        const e = new Error('Service not found'); e.statusCode = 404; throw e;
+      }
+      providerId = service.providerId;
     }
 
     const txn = await Transaction.create({
-      serviceId,
-      providerId: service.providerId,
+      serviceId: finalServiceId,
+      providerId: providerId,
       clientId: req.user.sub,
       amount: Number(amount),
       status: 'held',

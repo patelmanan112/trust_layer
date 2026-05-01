@@ -10,6 +10,7 @@ function sanitizeUser(userDoc) {
     company: userDoc.company,
     email: userDoc.email,
     role: userDoc.role,
+    industry: userDoc.industry,
     trustScore: userDoc.trustScore,
     createdAt: userDoc.createdAt,
     updatedAt: userDoc.updatedAt,
@@ -18,7 +19,7 @@ function sanitizeUser(userDoc) {
 
 async function register(req, res, next) {
   try {
-    const { name, company, email, password, role } = req.body || {};
+    const { name, company, email, password, role, industry } = req.body || {};
 
     if (!email || !password || !role) {
       const err = new Error("email, password, and role are required");
@@ -50,6 +51,7 @@ async function register(req, res, next) {
       email,
       passwordHash,
       role,
+      industry,
     });
 
     const token = signAccessToken({

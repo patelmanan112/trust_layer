@@ -12,23 +12,27 @@ const disputeSchema = new mongoose.Schema(
   {
     disputeId:     { type: String, unique: true }, // e.g. DSP-8821
     transactionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Transaction', required: true },
+    clientId:      { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    providerId:    { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     reason:        { type: String, enum: DISPUTE_REASONS, required: true },
     description:   { type: String, required: true, trim: true },
-    amount:        { type: Number, required: true, min: 0 },
     status:        { type: String, enum: DISPUTE_STATUSES, default: 'open' },
-    proof:         { type: String }, // Optional string URL for evidence
-    raisedBy:      { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    proof:         [{ type: String }], // Array of file paths/URLs for evidence
+    raisedBy:      { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     resolvedAt:    { type: Date },
     resolutionNote:{ type: String },
   },
-  { timestamps: true }
+  { 
+    timestamps: true,
+    strictPopulate: false 
+  }
 );
 
 // Auto-generate disputeId before saving
 disputeSchema.pre('save', async function () {
   if (!this.disputeId) {
     const count = await mongoose.model('Dispute').countDocuments();
-    this.disputeId = `DSP-${String(count + 8000).padStart(4, '0')}`;
+    this.disputeId = `DSP-${String(count + 8001).padStart(4, '0')}`;
   }
 });
 
