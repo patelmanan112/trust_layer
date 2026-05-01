@@ -5,28 +5,32 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import Navbar from '../components/Navbar/Navbar';
-import { apiFetch, setToken } from '../lib/api';
+import { useAuth } from '../hooks/useAuth';
+import SEO from '../components/SEO';
+import toast from 'react-hot-toast';
 
 const Login = () => {
   const [activeTab, setActiveTab] = useState('signin');
   const [searchParams] = useSearchParams();
-  const role = searchParams.get('role');
   const type = searchParams.get('type');
+  const industry = searchParams.get('industry');
   const navigate = useNavigate();
+  const { login, register } = useAuth();
   const [serverError, setServerError] = useState('');
-  const [accountRole, setAccountRole] = useState(type === 'freelancer' ? 'freelancer' : 'client');
+  
+  // Map 'freelancer' from URL to 'provider' for DB
+  const initialRole = type === 'freelancer' || type === 'provider' ? 'provider' : 'client';
+  const [accountRole, setAccountRole] = useState(initialRole);
 
   useEffect(() => {
-    // If we want to default to 'create' when coming from role selection
-    if (role) {
+    if (type) {
       setActiveTab('create');
     }
-  }, [role]);
+  }, [type]);
 
   useEffect(() => {
-    // Keep role in sync with URL (role-selection flow)
-    if (type === 'freelancer') setAccountRole('freelancer');
-    else if (type === 'client') setAccountRole('client');
+    const mappedRole = type === 'freelancer' || type === 'provider' ? 'provider' : 'client';
+    setAccountRole(mappedRole);
   }, [type]);
 
   const formik = useFormik({
@@ -55,30 +59,23 @@ const Login = () => {
       setServerError('');
       try {
         if (activeTab === 'create') {
-          const payload = {
-            fullName: values.fullName,
+          await register({
+            name: values.fullName,
             company: values.company,
             email: values.email,
             password: values.password,
             role: accountRole,
-          };
-          const data = await apiFetch('/api/auth/register', {
-            method: 'POST',
-            body: JSON.stringify(payload),
+            industry: industry,
           });
-          setToken(data.token);
-          navigate('/dashboard', { replace: true });
-          return;
+          toast.success('Welcome to TrustLayer!');
+        } else {
+          await login(values.email, values.password);
+          toast.success('Signed in successfully');
         }
-
-        const data = await apiFetch('/api/auth/login', {
-          method: 'POST',
-          body: JSON.stringify({ email: values.email, password: values.password }),
-        });
-        setToken(data.token);
-        navigate('/dashboard', { replace: true });
       } catch (e) {
-        setServerError(e?.message || 'Login failed');
+        const msg = e.response?.data?.message || 'Authentication failed';
+        setServerError(msg);
+        toast.error(msg);
       } finally {
         helpers.setSubmitting(false);
       }
@@ -87,11 +84,12 @@ const Login = () => {
 
   return (
    <>
-   <Navbar/>
+    <SEO title={activeTab === 'signin' ? 'Sign In' : 'Join TrustLayer'} />
+    <Navbar/>
     <div className="min-h-screen flex bg-[#f9fbfb] font-sans text-gray-900">
-     
+      
       {/* LEFT SIDE: BRANDING */}
-      <div className="flex-1 flex flex-col justify-center px-[10%] bg-[radial-gradient(circle_at_10%_20%,rgba(61,99,86,0.03)_0%,transparent_50%)]">
+      <div className="flex-1 hidden lg:flex flex-col justify-center px-[10%] bg-[radial-gradient(circle_at_10%_20%,rgba(61,99,86,0.03)_0%,transparent_50%)]">
         <div className="flex items-center gap-3 mb-6">
           <FiShield className="text-[#3d6356]" size={36} />
           <span className="font-['Outfit'] text-[42px] font-bold text-[#1a4d3e] tracking-tight">TrustLayer Escrow</span>
@@ -116,153 +114,128 @@ const Login = () => {
       </div>
 
       {/* RIGHT SIDE: LOGIN CARD */}
-      <div className="flex-1 flex items-center justify-center p-10">
-        <div className="bg-white w-full max-w-[500px] p-12 rounded-xl shadow-[0_10px_25px_-5px_rgba(0,0,0,0.05)]">
+      <div className="flex-1 flex items-center justify-center p-6 md:p-10">
+        <div className="bg-white w-full max-w-[500px] p-8 md:p-12 rounded-[32px] shadow-[0_10px_40px_-15px_rgba(0,0,0,0.08)]">
           
-          {role && (
+          {type && (
             <div className="mb-6 flex items-center gap-2">
-              <span className="bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                {type === 'freelancer' ? 'Freelancer' : 'Client'} Account
+              <span className="bg-green-100 text-green-800 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">
+                {type === 'freelancer' || type === 'provider' ? 'Freelancer' : 'Client'} Account
               </span>
-              <span className="text-sm font-medium text-gray-500 capitalize">
-                (Role: {role})
-              </span>
+              {industry && (
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                  {industry} Industry
+                </span>
+              )}
             </div>
           )}
 
-          <div className="flex gap-8 mb-8 border-b border-gray-200">
+          <div className="flex gap-8 mb-8 border-b border-gray-50">
             <div 
-              className={`pb-3 font-medium cursor-pointer relative transition-colors ${activeTab === 'signin' ? 'text-[#3d6356]' : 'text-gray-500'}`}
+              className={`pb-4 font-black uppercase text-[10px] tracking-widest cursor-pointer relative transition-colors ${activeTab === 'signin' ? 'text-[#3d6356]' : 'text-gray-300'}`}
               onClick={() => setActiveTab('signin')}
             >
               Sign In
-              {activeTab === 'signin' && <div className="absolute bottom-[-1px] left-0 w-full h-0.5 bg-[#3d6356]"></div>}
+              {activeTab === 'signin' && <div className="absolute bottom-0 left-0 w-full h-1 bg-[#3d6356] rounded-full"></div>}
             </div>
             <div 
-              className={`pb-3 font-medium cursor-pointer relative transition-colors ${activeTab === 'create' ? 'text-[#3d6356]' : 'text-gray-500'}`}
+              className={`pb-4 font-black uppercase text-[10px] tracking-widest cursor-pointer relative transition-colors ${activeTab === 'create' ? 'text-[#3d6356]' : 'text-gray-300'}`}
               onClick={() => setActiveTab('create')}
             >
               Create Account
-              {activeTab === 'create' && <div className="absolute bottom-[-1px] left-0 w-full h-0.5 bg-[#3d6356]"></div>}
+              {activeTab === 'create' && <div className="absolute bottom-0 left-0 w-full h-1 bg-[#3d6356] rounded-full"></div>}
             </div>
           </div>
 
           <form onSubmit={formik.handleSubmit}>
             {serverError ? (
-              <div className="mb-6 bg-red-50 border border-red-100 text-red-700 text-sm font-semibold rounded-lg p-3">
+              <div className="mb-6 bg-red-50 border border-red-100 text-red-700 text-[11px] font-black uppercase tracking-widest rounded-xl p-4">
                 {serverError}
               </div>
             ) : null}
+            
             {activeTab === 'create' && (
               <>
                 <div className="mb-6">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Full Name</label>
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Full Name</label>
                   <input 
                     name="fullName"
                     type="text" 
-                    className={`w-full px-4 py-3.5 bg-gray-50 border rounded-lg text-[15px] text-gray-900 outline-none focus:bg-gray-100 transition-colors ${formik.touched.fullName && formik.errors.fullName ? 'border-red-500' : 'border-transparent'}`} 
+                    className={`w-full px-5 py-4 bg-gray-50 border-none rounded-2xl font-bold text-sm outline-none focus:bg-gray-100 transition-all ${formik.touched.fullName && formik.errors.fullName ? 'ring-2 ring-red-500' : ''}`} 
                     placeholder="Manan Patel"
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
                     value={formik.values.fullName}
                   />
-                  {formik.touched.fullName && formik.errors.fullName ? (
-                    <div className="text-red-500 text-xs mt-1">{formik.errors.fullName}</div>
-                  ) : null}
+                  {formik.touched.fullName && formik.errors.fullName && <div className="text-red-500 text-[10px] mt-1 font-bold">{formik.errors.fullName}</div>}
                 </div>
                 <div className="mb-6">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Organization / Company Name</label>
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Organization</label>
                   <input 
                     name="company"
                     type="text" 
-                    className="w-full px-4 py-3.5 bg-gray-50 border rounded-lg text-[15px] text-gray-900 outline-none focus:bg-gray-100 transition-colors border-transparent" 
-                    placeholder="TATA"
+                    className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl font-bold text-sm outline-none focus:bg-gray-100 transition-all" 
+                    placeholder="Company Name"
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
                     value={formik.values.company}
                   />
                 </div>
 
-                {!type ? (
+                {!type && (
                   <div className="mb-6">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Account Type</label>
+                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Account Type</label>
                     <select
                       value={accountRole}
                       onChange={(e) => setAccountRole(e.target.value)}
-                      className="w-full px-4 py-3.5 bg-gray-50 border rounded-lg text-[15px] text-gray-900 outline-none focus:bg-gray-100 transition-colors border-transparent"
+                      className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl font-bold text-sm outline-none focus:bg-gray-100 transition-all"
                     >
                       <option value="client">Client</option>
-                      <option value="freelancer">Freelancer</option>
+                      <option value="provider">Freelancer</option>
                     </select>
                   </div>
-                ) : null}
+                )}
               </>
             )}
 
             <div className="mb-6">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Corporate Email Address</label>
+              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Corporate Email</label>
               <input 
                 name="email"
                 type="email" 
-                className={`w-full px-4 py-3.5 bg-gray-50 border rounded-lg text-[15px] text-gray-900 outline-none focus:bg-gray-100 transition-colors ${formik.touched.email && formik.errors.email ? 'border-red-500' : 'border-transparent'}`} 
+                className={`w-full px-5 py-4 bg-gray-50 border-none rounded-2xl font-bold text-sm outline-none focus:bg-gray-100 transition-all ${formik.touched.email && formik.errors.email ? 'ring-2 ring-red-500' : ''}`} 
                 placeholder="name@company.com"
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
                 value={formik.values.email}
               />
-              {formik.touched.email && formik.errors.email ? (
-                <div className="text-red-500 text-xs mt-1">{formik.errors.email}</div>
-              ) : null}
+              {formik.touched.email && formik.errors.email && <div className="text-red-500 text-[10px] mt-1 font-bold">{formik.errors.email}</div>}
             </div>
 
-            <div className="mb-6">
+            <div className="mb-8">
               <div className="flex justify-between items-center mb-2">
-                <label className="text-sm font-semibold text-gray-700">Security Password</label>
-                <a href="#" className="text-xs text-[#3d6356] font-semibold">Forgot password?</a>
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Password</label>
+                {activeTab === 'signin' && <a href="#" className="text-[10px] text-[#3d6356] font-black uppercase tracking-widest">Forgot?</a>}
               </div>
               <input 
                 name="password"
                 type="password" 
-                className={`w-full px-4 py-3.5 bg-gray-50 border rounded-lg text-[15px] text-gray-900 outline-none focus:bg-gray-100 transition-colors ${formik.touched.password && formik.errors.password ? 'border-red-500' : 'border-transparent'}`} 
+                className={`w-full px-5 py-4 bg-gray-50 border-none rounded-2xl font-bold text-sm outline-none focus:bg-gray-100 transition-all ${formik.touched.password && formik.errors.password ? 'ring-2 ring-red-500' : ''}`} 
                 placeholder="••••••••"
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
                 value={formik.values.password}
               />
-              {formik.touched.password && formik.errors.password ? (
-                <div className="text-red-500 text-xs mt-1">{formik.errors.password}</div>
-              ) : null}
+              {formik.touched.password && formik.errors.password && <div className="text-red-500 text-[10px] mt-1 font-bold">{formik.errors.password}</div>}
             </div>
 
-            <div className="bg-gray-100 p-4 rounded-lg flex gap-3 mb-8">
-              <FiInfo className="text-gray-500 shrink-0 mt-0.5" size={18} />
-              <p className="text-[13px] text-gray-600 leading-tight">
-                We will require a hardware key or biometrics verification on the next step for verified accounts.
-              </p>
-            </div>
-
-            <button type="submit" className="w-full py-4 bg-[#3d6356] text-white rounded-lg text-base font-semibold flex items-center justify-center gap-2 hover:bg-[#345448] transition-colors mb-8 cursor-pointer disabled:opacity-50" disabled={formik.isSubmitting}>
-              {activeTab === 'create' ? 'Create Account' : 'Sign In'} <FiArrowRight />
+            <button type="submit" className="w-full py-5 bg-[#3d6356] text-white rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 hover:bg-[#2a453c] transition-all shadow-xl shadow-emerald-900/10 disabled:opacity-50" disabled={formik.isSubmitting}>
+              {activeTab === 'create' ? 'Create Secure Account' : 'Authenticate Session'} <FiArrowRight />
             </button>
           </form>
 
-          <div className="flex items-center gap-4 mb-8">
-            <div className="flex-1 h-px bg-gray-200"></div>
-            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">or authenticate via</span>
-            <div className="flex-1 h-px bg-gray-200"></div>
-          </div>
-
-          <button className="w-full py-3.5 bg-white border border-gray-200 rounded-lg text-[15px] font-semibold text-gray-700 flex items-center justify-center gap-3 hover:bg-gray-50 transition-colors mb-8 cursor-pointer">
-            <img 
-              src="https://www.vectorlogo.zone/logos/google/google-icon.svg" 
-              alt="Google" 
-              width="20"
-            />
-            Continue with Enterprise SSO
-          </button>
-
-          <div className="text-center text-xs text-gray-400 leading-normal">
-            Protected by bank-level encryption. By signing in, you agree to our <a href="#" className="text-gray-500 underline">Terms of Service</a>.
+          <div className="text-center mt-8 text-[10px] text-gray-400 font-bold leading-normal uppercase tracking-tighter">
+            Protected by bank-level encryption. By signing in, you agree to our <a href="#" className="text-gray-500 underline">Legal Terms</a>.
           </div>
         </div>
       </div>

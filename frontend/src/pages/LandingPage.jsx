@@ -16,7 +16,9 @@ import {
   FiTruck,
   FiEdit,
   FiDollarSign,
-  FiSearch
+  FiSearch,
+  FiAlertCircle,
+  FiSettings
 } from 'react-icons/fi';
 import { FaGlobe, FaTwitter, FaLinkedin } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
@@ -33,10 +35,10 @@ const LandingPage = () => {
             <FiShield size={14} /> INSTITUTIONAL GRADE ESCROW
           </div>
           <h1 className="text-5xl lg:text-6xl font-extrabold leading-tight text-[#111827] mb-6">
-            Secure large-scale transactions with <span className="text-[#316C5B]">absolute trust.</span>
+            A successful payment should guarantee a <span className="text-[#316C5B]">successful service.</span>
           </h1>
-          <p className="text-base text-gray-500 max-w-[450px] mb-10 leading-relaxed">
-            TrustVault provides high-fidelity escrow services for businesses, ensuring funds are only released when every condition of the agreement is met.
+          <p className="text-base text-gray-500 max-w-[500px] mb-10 leading-relaxed">
+            A trust-based escrow platform that ensures payments are only released after verified service delivery, improving transparency, accountability, and user confidence.
           </p>
           <div className="flex gap-4">
             <Link to="/role-selection">
@@ -55,23 +57,25 @@ const LandingPage = () => {
       {/* PROBLEM SECTION */}
       <section className="text-center bg-[#F9FAFB] py-20">
         <div className="max-w-[1200px] mx-auto px-5">
-          <h2 className="text-4xl font-bold mb-4">Transaction risks are evolving.</h2>
-          <p className="text-gray-500 max-w-[600px] mx-auto mb-15">
-            Traditional methods are too slow, too expensive, or lack the security required for modern digital assets.
+          <h2 className="text-4xl font-bold mb-6">The Challenge in Digital Payments</h2>
+          <p className="text-gray-600 max-w-[800px] mx-auto mb-15 text-lg leading-relaxed">
+            In today’s digital world, making payments online is easy—but ensuring that the service you paid for is actually delivered is still a major challenge. Across industries like healthcare, hospitality, and freelancing, users often face issues such as overcharging, poor service quality, or incomplete work, even after making full payments.
           </p>
-          <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-6 text-left">
-            <div className="bg-white rounded-xl p-10 border border-[#F3F4F6] flex flex-col">
-              <div className="text-red-600 mb-5"><FiLayers size={24} /></div>
-              <h3 className="text-2xl font-bold mb-3">Legal Vulnerability</h3>
-              <p className="text-gray-500 mb-8">Handshake agreements and standard bank transfers offer zero protection against bad actors or incomplete deliverables.</p>
-              <div className="w-full rounded-lg overflow-hidden mt-auto">
-                <img src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&q=80&w=600" alt="Legal Document" className="w-full" />
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+            <div className="bg-white rounded-xl p-8 shadow-sm border border-[#F3F4F6]">
+              <div className="w-12 h-12 bg-red-50 text-red-600 rounded-lg flex items-center justify-center mb-6"><FiLock size={24} /></div>
+              <h3 className="text-xl font-bold mb-3">Poor Service Quality</h3>
+              <p className="text-gray-500">Receiving substandard work or incomplete deliverables after the payment is already gone.</p>
             </div>
-            <div className="bg-white rounded-xl p-10 border border-[#F3F4F6] flex flex-col items-center justify-center text-center">
-              <div className="text-red-600 mb-5"><FiClock size={48} /></div>
-              <h3 className="text-2xl font-bold mb-3">3-5 Day Lag</h3>
-              <p className="text-gray-500">Cross-border verification stalls business growth and creates capital inefficiency.</p>
+            <div className="bg-white rounded-xl p-8 shadow-sm border border-[#F3F4F6]">
+              <div className="w-12 h-12 bg-red-50 text-red-600 rounded-lg flex items-center justify-center mb-6"><FiAlertCircle size={24} /></div>
+              <h3 className="text-xl font-bold mb-3">Overcharging & Fraud</h3>
+              <p className="text-gray-500">Service providers abandoning the project or demanding unexpected extra fees.</p>
+            </div>
+            <div className="bg-white rounded-xl p-8 shadow-sm border border-[#F3F4F6]">
+              <div className="w-12 h-12 bg-red-50 text-red-600 rounded-lg flex items-center justify-center mb-6"><FiClock size={24} /></div>
+              <h3 className="text-xl font-bold mb-3">Zero Accountability</h3>
+              <p className="text-gray-500">Without a neutral middleman, resolving disputes becomes a slow, painful process.</p>
             </div>
           </div>
         </div>
@@ -79,38 +83,81 @@ const LandingPage = () => {
 
       {/* SOLUTION SECTION */}
       <section className="max-w-[1200px] mx-auto px-5 py-20 flex flex-col lg:flex-row gap-20 items-center">
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-[#F3F4F6] border-t-4 border-[#064E3B]">
-            <div className="text-emerald-600 mb-4"><FiShield size={24} /></div>
-            <h4 className="text-lg font-bold mb-2">Vaulted Funds</h4>
-            <p className="text-sm text-gray-500">Assets are held in a multi-sig vault, immutable until verified.</p>
-          </div>
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-[#F3F4F6]">
-            <div className="text-emerald-600 mb-4"><FiCheckCircle size={24} /></div>
-            <h4 className="text-lg font-bold mb-2">Smart Logic</h4>
-            <p className="text-sm text-gray-500">Automated release based on API triggers or manual inspection.</p>
-          </div>
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-[#F3F4F6]">
-            <div className="text-emerald-600 mb-4"><FiTrendingUp size={24} /></div>
-            <h4 className="text-lg font-bold mb-2">Arbitration</h4>
-            <p className="text-sm text-gray-500">Expert dispute resolution to handle complex edge cases.</p>
-          </div>
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-[#F3F4F6]">
-            <div className="text-emerald-600 mb-4"><FiFileText size={24} /></div>
-            <h4 className="text-lg font-bold mb-2">Audit Trail</h4>
-            <p className="text-sm text-gray-500">Every action is cryptographically signed and logged.</p>
+        <div className="flex-1">
+          <h2 className="text-4xl font-bold mb-6">Our Solution: True Accountability</h2>
+          <p className="text-gray-600 mb-6 text-lg leading-relaxed">
+            Our platform solves this problem by introducing a trust-based escrow system that connects payments with real service outcomes.
+          </p>
+          <p className="text-gray-600 mb-6 leading-relaxed">
+            Instead of transferring money directly to the service provider, payments are securely held in escrow. The provider must first complete the service and submit proof of delivery. The user then verifies whether the service meets expectations. Only after successful verification is the payment released.
+          </p>
+          <p className="text-gray-600 mb-8 leading-relaxed">
+            If any issue arises, both parties can raise a dispute, and the system ensures a fair resolution using proof-based validation and a trust scoring mechanism.
+          </p>
+          <div className="bg-[#D1FAE5] text-[#065F46] p-6 rounded-xl border border-emerald-200">
+            <p className="font-semibold italic">"This approach transforms traditional transactions into a complete, accountable workflow, where both users and service providers are protected."</p>
           </div>
         </div>
-        <div className="flex-1">
-          <h2 className="text-4xl font-bold mb-6">Our solution: Trust, engineered for scale.</h2>
-          <p className="text-gray-500 mb-8">
-            We combine the speed of automated smart contracts with the reliability of institutional legal frameworks. Your transactions are safe, transparent, and legally binding.
-          </p>
-          <ul className="list-none">
-            <li className="flex items-center gap-3 mb-4 font-medium"><FiCheckCircle className="text-emerald-600" /> Zero-knowledge proof verification</li>
-            <li className="flex items-center gap-3 mb-4 font-medium"><FiCheckCircle className="text-emerald-600" /> SOC-2 Type II Certified infrastructure</li>
-            <li className="flex items-center gap-3 mb-4 font-medium"><FiCheckCircle className="text-emerald-600" /> 24/7 Concierge Support for high-value trades</li>
-          </ul>
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-5">
+           <div className="col-span-full mb-2 flex items-center"><FiSettings className="text-emerald-600 mr-3" size={28} /><h3 className="text-2xl font-bold">What We Offer</h3></div>
+           
+           <div className="bg-white rounded-xl p-6 shadow-sm border border-[#F3F4F6] flex items-start gap-4">
+             <div className="text-emerald-600 mt-1"><FiLock size={20} /></div>
+             <p className="font-semibold text-gray-900">Secure escrow-based payments</p>
+           </div>
+           <div className="bg-white rounded-xl p-6 shadow-sm border border-[#F3F4F6] flex items-start gap-4">
+             <div className="text-emerald-600 mt-1"><FiCheckCircle size={20} /></div>
+             <p className="font-semibold text-gray-900">Service verification before release</p>
+           </div>
+           <div className="bg-white rounded-xl p-6 shadow-sm border border-[#F3F4F6] flex items-start gap-4">
+             <div className="text-emerald-600 mt-1"><FiFileText size={20} /></div>
+             <p className="font-semibold text-gray-900">Proof submission for completed work</p>
+           </div>
+           <div className="bg-white rounded-xl p-6 shadow-sm border border-[#F3F4F6] flex items-start gap-4">
+             <div className="text-emerald-600 mt-1"><FiShield size={20} /></div>
+             <p className="font-semibold text-gray-900">Fair dispute resolution system</p>
+           </div>
+           <div className="bg-white rounded-xl p-6 shadow-sm border border-[#F3F4F6] flex items-start gap-4">
+             <div className="text-emerald-600 mt-1"><FiTrendingUp size={20} /></div>
+             <p className="font-semibold text-gray-900">Trust score system for reliability</p>
+           </div>
+           <div className="bg-white rounded-xl p-6 shadow-sm border border-[#F3F4F6] flex items-start gap-4">
+             <div className="text-emerald-600 mt-1"><FiLayers size={20} /></div>
+             <p className="font-semibold text-gray-900">Role-based dashboards</p>
+           </div>
+        </div>
+      </section>
+
+      {/* WHY IT MATTERS & VISION SECTION */}
+      <section className="bg-[#111827] text-white py-24 text-center">
+        <div className="max-w-[900px] mx-auto px-5">
+          <div className="mb-16">
+            <h2 className="text-3xl font-bold mb-6 text-emerald-400 flex items-center justify-center gap-3"><FiGlobe /> Why It Matters</h2>
+            <p className="text-xl text-gray-300 leading-relaxed mb-10">
+              By ensuring that payments are tied to verified outcomes, our platform builds a system where trust is not assumed—it is enforced.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
+              <div className="bg-white/10 p-6 rounded-2xl backdrop-blur-sm border border-white/10">
+                <h4 className="text-lg font-bold mb-2 text-white">Confidence</h4>
+                <p className="text-sm text-gray-400">Users gain confidence and control over their payments.</p>
+              </div>
+              <div className="bg-white/10 p-6 rounded-2xl backdrop-blur-sm border border-white/10">
+                <h4 className="text-lg font-bold mb-2 text-white">Quality</h4>
+                <p className="text-sm text-gray-400">Providers are encouraged to deliver quality services.</p>
+              </div>
+              <div className="bg-white/10 p-6 rounded-2xl backdrop-blur-sm border border-white/10">
+                <h4 className="text-lg font-bold mb-2 text-white">Security</h4>
+                <p className="text-sm text-gray-400">Fraud and disputes are significantly reduced.</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="pt-16 border-t border-white/10">
+            <h2 className="text-3xl font-bold mb-6 text-emerald-400 flex items-center justify-center gap-3"><FiTrendingUp /> Our Vision</h2>
+            <p className="text-2xl font-light text-white leading-relaxed italic">
+              "We aim to create a future where digital transactions are not just fast, but also trustworthy, transparent, and outcome-driven across all service-based industries."
+            </p>
+          </div>
         </div>
       </section>
 

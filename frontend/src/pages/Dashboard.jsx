@@ -1,414 +1,427 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useSelector } from 'react-redux';
+import api from '../services/api';
 import { 
-  FiCheckCircle, 
-  FiAlertCircle, 
-  FiArrowRight,
-  FiShield,
-  FiClock,
-  FiDollarSign,
-  FiBox,
-  FiPlus,
-  FiZap,
-  FiUser,
-  FiChevronRight,
-  FiBell
+  FiPlus, FiDollarSign, FiClock, FiCheckCircle, FiAlertCircle, 
+  FiBox, FiArrowRight, FiUser, FiBriefcase, FiZap, FiLock,
+  FiUploadCloud, FiFileText, FiShield, FiStar, FiSettings, 
+  FiTrendingUp, FiMoreHorizontal, FiActivity, FiX, FiPieChart, FiShoppingBag
 } from 'react-icons/fi';
-import { BiTrendingUp } from 'react-icons/bi';
-import { useNavigate } from 'react-router-dom';
-import { apiFetch, getToken, setToken } from '../lib/api';
+import { Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
+import SEO from '../components/SEO';
 
 const Dashboard = () => {
-  const navigate = useNavigate();
+  const { user: authUser } = useSelector((state) => state.auth);
   const [profile, setProfile] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [disputes, setDisputes] = useState([]);
+  const [availableServices, setAvailableServices] = useState([]);
+  const [filteredServices, setFilteredServices] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
+
+  // Modals
+  const [showServiceModal, setShowServiceModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showProofUploadModal, setShowProofUploadModal] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Form States
+  const [serviceForm, setServiceForm] = useState({ title: '', description: '', price: '', category: 'Tech' });
+  const [paymentForm, setPaymentForm] = useState({ serviceId: '', amount: '', customTitle: '', providerEmail: '' });
+  const [proofFile, setProofFile] = useState(null);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [pData, tData, dData, sData] = await Promise.all([
+        api.get('/api/users/profile'),
+        api.get('/api/transactions'),
+        api.get('/api/disputes'),
+        api.get('/api/services')
+      ]);
+      const userData = pData?.user;
+      setProfile(userData);
+      setTransactions(tData?.transactions || []);
+      setDisputes(dData?.disputes || []);
+      
+      const allServices = sData?.services || [];
+      setAvailableServices(allServices);
+      // Filter by industry if available
+      if (userData?.industry) {
+        setFilteredServices(allServices.filter(s => 
+          s.category && s.category.toLowerCase() === userData.industry.toLowerCase()
+        ));
+      } else {
+        setFilteredServices(allServices);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const token = getToken();
-    if (!token) {
-      navigate('/login', { replace: true });
-      return;
-    }
-
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        // Fetch Profile, Transactions and Disputes in parallel
-        const [profileData, txData, disputeData] = await Promise.all([
-          apiFetch('/api/users/profile', { token }),
-          apiFetch('/api/transactions', { token }),
-          apiFetch('/api/disputes', { token })
-        ]);
-
-        setProfile(profileData?.user || null);
-        setTransactions(txData?.transactions || []);
-        setDisputes(disputeData?.disputes || []);
-      } catch (err) {
-        console.error('Fetch error:', err);
-        if (err.statusCode === 401) {
-          setToken(null);
-          navigate('/login', { replace: true });
-        } else {
-          setError('Failed to load dashboard data. Please try again.');
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
-  }, [navigate]);
+  }, [fetchData]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-white">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#316C5B]"></div>
-      </div>
-    );
-  }
+  const handleCreateService = useCallback(async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      await api.post('/api/services', serviceForm);
+      toast.success('Service created successfully');
+      setShowServiceModal(false);
+      setServiceForm({ title: '', description: '', price: '', category: profile?.industry || 'Tech' });
+      fetchData();
+    } catch (err) { } finally { setIsSubmitting(false); }
+  }, [serviceForm, profile, fetchData]);
 
-  if (error) {
-    return (
-      <div className="p-8 text-center">
-        <p className="text-red-500 font-semibold">{error}</p>
-        <button onClick={() => window.location.reload()} className="mt-4 px-4 py-2 bg-[#316C5B] text-white rounded-lg">Retry</button>
-      </div>
-    );
-  }
+  const handleMakePayment = useCallback(async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      await api.post('/api/transactions', {
+        serviceId: paymentForm.serviceId,
+        customTitle: paymentForm.serviceId === 'custom' ? paymentForm.customTitle : undefined,
+        providerEmail: paymentForm.serviceId === 'custom' ? paymentForm.providerEmail : undefined,
+        amount: Number(paymentForm.amount)
+      });
+      toast.success('Payment secured in escrow');
+      setShowPaymentModal(false);
+      setPaymentForm({ serviceId: '', amount: '', customTitle: '', providerEmail: '' });
+      fetchData();
+    } catch (err) { } finally { setIsSubmitting(false); }
+  }, [paymentForm, fetchData]);
+
+  const handleUploadProof = useCallback(async (e) => {
+    e.preventDefault();
+    if (!proofFile || !showProofUploadModal) return;
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append('proof', proofFile);
+      await api.post(`/api/transactions/${showProofUploadModal}/complete`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      toast.success('Work proof submitted');
+      setShowProofUploadModal(null);
+      setProofFile(null);
+      fetchData();
+    } catch (err) { } finally { setIsSubmitting(false); }
+  }, [proofFile, showProofUploadModal, fetchData]);
 
   const role = profile?.role || 'client';
-  const name = profile?.name || 'User';
-  const trustScore = profile?.trustScore || 100;
+  const themeColor = role === 'provider' ? '#1a4d3e' : '#1e3a8a';
+  const themeBg = role === 'provider' ? 'bg-[#1a4d3e]' : 'bg-[#1e3a8a]';
+  const themeLightBg = role === 'provider' ? 'bg-emerald-50' : 'bg-blue-50';
+  const themeText = role === 'provider' ? 'text-emerald-600' : 'text-blue-600';
 
-  // Calculate Metrics
-  const activeEscrows = transactions.filter(t => t.status === 'held' || t.status === 'delivered');
-  const activeDisputes = disputes.filter(d => d.status === 'open' || d.status === 'under_review');
-  const completedTxns = transactions.filter(t => t.status === 'completed');
-  
-  const totalVolume = transactions.reduce((acc, t) => acc + t.amount, 0);
-  const totalEarnings = role === 'provider' 
-    ? transactions.filter(t => t.status === 'completed').reduce((acc, t) => acc + t.amount, 0)
-    : 0;
-  const escrowBalance = role === 'client'
-    ? transactions.filter(t => t.status === 'held' || t.status === 'delivered').reduce((acc, t) => acc + t.amount, 0)
-    : 0;
+  const activeEscrows = useMemo(() => transactions.filter(t => ['held', 'delivered', 'disputed'].includes(t.status)), [transactions]);
+  const activeDisputes = useMemo(() => disputes.filter(d => d.status !== 'resolved'), [disputes]);
+  const totalEarnings = useMemo(() => transactions.filter(t => t.status === 'completed').reduce((acc, t) => acc + t.amount, 0), [transactions]);
+  const escrowBalance = useMemo(() => transactions.filter(t => ['held', 'delivered', 'disputed'].includes(t.status)).reduce((acc, t) => acc + t.amount, 0), [transactions]);
 
-  const completionRate = transactions.length > 0 
-    ? Math.round((completedTxns.length / transactions.length) * 100) 
-    : 100;
-
-  // Identify Active Items needing attention
-  const pendingActions = role === 'client'
-    ? activeEscrows.filter(t => t.status === 'delivered') // Needs verification
-    : role === 'provider'
-    ? activeEscrows.filter(t => t.status === 'held') // Provider needs to complete
-    : activeDisputes; // Admin needs to resolve disputes
-
-  return (
-    <div className="w-full max-w-[1200px] mx-auto px-4 lg:px-8 py-8 animate-in fade-in duration-500">
-      
-      {/* 1. PROFILE SNAPSHOT & QUICK ACTIONS */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-6 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-[#ecfdf5] rounded-full flex items-center justify-center text-[#316C5B]">
-            <FiUser size={28} />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 leading-tight">Hello, {name}</h1>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="px-2 py-0.5 bg-[#316C5B] text-white text-[10px] font-bold rounded uppercase tracking-wider">{role}</span>
-              <span className="text-xs text-gray-400 font-medium italic">Institutional ID: #{profile?.id?.slice(-6).toUpperCase()}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap gap-3">
-          {role === 'provider' && (
-            <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#316C5B] text-white font-bold text-sm hover:bg-[#255245] transition-all shadow-lg shadow-[#316C5B]/20">
-              <FiPlus /> Create Service
-            </button>
-          )}
-          {role === 'client' && (
-            <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#316C5B] text-white font-bold text-sm hover:bg-[#255245] transition-all shadow-lg shadow-[#316C5B]/20">
-              <FiDollarSign /> Make Payment
-            </button>
-          )}
-          {role === 'admin' && (
-            <button onClick={() => navigate('/disputes')} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-red-600 text-white font-bold text-sm hover:bg-red-700 transition-all shadow-lg shadow-red-600/20">
-              <FiAlertCircle /> Resolve Disputes
-            </button>
-          )}
-          <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-bold text-sm hover:bg-gray-50 transition-all">
-            <FiShield /> Verify Identity
-          </button>
-        </div>
-      </div>
-
-      {/* 2. OVERVIEW CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">
-            {role === 'client' ? 'Escrow Balance' : role === 'admin' ? 'Platform Volume' : 'Total Earnings'}
-          </p>
-          <div className="flex items-end justify-between">
-            <h3 className="text-2xl font-bold text-gray-900">₹{(role === 'client' ? escrowBalance : role === 'admin' ? totalVolume : totalEarnings).toLocaleString()}</h3>
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-              <FiDollarSign size={20} />
-            </div>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Active {role === 'provider' ? 'Services' : 'Escrows'}</p>
-          <div className="flex items-end justify-between">
-            <h3 className="text-2xl font-bold text-gray-900">{activeEscrows.length}</h3>
-            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
-              <FiBox size={20} />
-            </div>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Active Disputes</p>
-          <div className="flex items-end justify-between">
-            <h3 className="text-2xl font-bold text-red-600">{activeDisputes.length}</h3>
-            <div className="p-2 bg-red-50 text-red-600 rounded-lg">
-              <FiAlertCircle size={20} />
-            </div>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Completed</p>
-          <div className="flex items-end justify-between">
-            <h3 className="text-2xl font-bold text-gray-900">{completedTxns.length}</h3>
-            <div className="p-2 bg-gray-50 text-gray-600 rounded-lg">
-              <FiCheckCircle size={20} />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-8">
-        
-        {/* LEFT COLUMN */}
-        <div className="flex flex-col gap-8">
-          
-          {/* 3. ACTIVE ITEMS SECTION */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-50 flex justify-between items-center bg-gray-50/30">
-              <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                <FiZap className="text-orange-500" /> Active Real-Time Work
-              </h3>
-              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{pendingActions.length} Actions Required</span>
-            </div>
-            
-            <div className="p-6">
-              {pendingActions.length === 0 ? (
-                <div className="text-center py-10">
-                  <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
-                    <FiCheckCircle size={32} />
-                  </div>
-                  <p className="text-gray-500 font-medium text-sm">Everything is up to date! No pending actions.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {pendingActions.slice(0, 4).map((item) => (
-                    <div key={item.id} className="p-4 border border-gray-100 rounded-xl bg-gray-50/50 hover:border-[#316C5B]/30 transition-all group">
-                      <div className="flex justify-between items-start mb-3">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                          role === 'admin' ? 'bg-red-100 text-red-700' :
-                          item.status === 'delivered' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'
-                        }`}>
-                          {role === 'admin' ? `Dispute ${item.status}` :
-                           item.status === 'delivered' ? 'Ready for verification' : 'Waiting for provider'}
-                        </span>
-                        <p className="text-xs font-bold text-gray-900">₹{item.amount.toLocaleString()}</p>
-                      </div>
-                      <h4 className="text-sm font-bold text-gray-900 mb-4 line-clamp-1">
-                        {role === 'admin' ? item.reason : (item.serviceId?.title || 'Transaction #' + item.transactionId)}
-                      </h4>
-                      
-                      <div className="flex gap-2">
-                        {role === 'client' && item.status === 'delivered' && (
-                          <button onClick={() => navigate('/escrows')} className="flex-1 py-2 bg-[#316C5B] text-white rounded-lg text-xs font-bold hover:bg-[#255245] transition-colors">
-                            Verify Now
-                          </button>
-                        )}
-                        {role === 'provider' && item.status === 'held' && (
-                          <button onClick={() => navigate('/escrows')} className="flex-1 py-2 bg-[#316C5B] text-white rounded-lg text-xs font-bold hover:bg-[#255245] transition-colors">
-                            Upload Proof
-                          </button>
-                        )}
-                        {role === 'admin' && (
-                          <button onClick={() => navigate('/disputes')} className="flex-1 py-2 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition-colors">
-                            Resolve
-                          </button>
-                        )}
-                        <button onClick={() => navigate(role === 'admin' ? '/disputes' : '/transactions')} className="flex-1 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-50 transition-colors">
-                          Details
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* 4. TRANSACTION SUMMARY */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-50 flex justify-between items-center bg-gray-50/30">
-              <h3 className="font-bold text-gray-900">Recent Transactions</h3>
-              <button onClick={() => navigate('/transactions')} className="text-xs font-bold text-[#316C5B] hover:underline flex items-center gap-1">
-                View All <FiChevronRight />
-              </button>
-            </div>
-            <div className="p-0">
-              {transactions.length === 0 ? (
-                <p className="p-8 text-center text-sm text-gray-500 font-medium">No transactions found.</p>
-              ) : (
-                <div className="flex flex-col">
-                  {transactions.slice(0, 5).map((txn, idx) => (
-                    <div key={txn.id} className={`flex items-center justify-between p-4 hover:bg-gray-50 transition-colors ${idx !== 4 ? 'border-b border-gray-50' : ''}`}>
-                      <div className="flex items-center gap-4">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                          txn.status === 'completed' ? 'bg-emerald-50 text-emerald-600' :
-                          txn.status === 'disputed' ? 'bg-red-50 text-red-600' :
-                          'bg-blue-50 text-blue-600'
-                        }`}>
-                          {txn.status === 'completed' ? <FiCheckCircle /> : txn.status === 'disputed' ? <FiAlertCircle /> : <FiClock />}
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-gray-900">{txn.serviceId?.title || 'Contract'}</p>
-                          <p className="text-[10px] font-bold text-gray-400 uppercase">{txn.status}</p>
-                        </div>
-                      </div>
-                      <p className="text-sm font-bold text-gray-900">₹{txn.amount.toLocaleString()}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* RIGHT COLUMN */}
-        <div className="flex flex-col gap-8">
-          
-          {/* 5. TRUST / PERFORMANCE */}
-          <div className="bg-[#1a4d3e] p-8 rounded-2xl shadow-xl shadow-[#1a4d3e]/20 text-white relative overflow-hidden">
-            <div className="relative z-10">
-              <p className="text-[10px] font-bold text-emerald-300 uppercase tracking-widest mb-6">Trust Intelligence</p>
-              
-              <div className="mb-8">
-                <div className="flex justify-between items-end mb-2">
-                  <span className="text-4xl font-black">{trustScore}</span>
-                  <span className="text-xs font-bold text-emerald-300">TRUST SCORE</span>
-                </div>
-                <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-                  <div className="h-full bg-emerald-400 rounded-full transition-all duration-1000" style={{ width: `${trustScore}%` }}></div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-[10px] font-bold text-emerald-300 uppercase mb-1">Completion</p>
-                  <p className="text-xl font-bold">{completionRate}%</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-emerald-300 uppercase mb-1">Disputes</p>
-                  <p className="text-xl font-bold">{Math.round((activeDisputes.length / (transactions.length || 1)) * 100)}%</p>
-                </div>
-              </div>
-            </div>
-            <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/5 rounded-full blur-3xl"></div>
-            <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-emerald-400/10 rounded-full blur-3xl"></div>
-          </div>
-
-          {/* 6. DISPUTE SUMMARY */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-50 flex justify-between items-center bg-gray-50/30">
-              <h3 className="font-bold text-gray-900">Dispute Center</h3>
-              <button onClick={() => navigate('/disputes')} className="text-xs font-bold text-[#316C5B] hover:underline">Manage</button>
-            </div>
-            <div className="p-6">
-              {activeDisputes.length === 0 ? (
-                <div className="text-center py-4">
-                  <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <FiCheckCircle size={20} />
-                  </div>
-                  <p className="text-xs text-gray-500 font-bold">No active disputes!</p>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-3">
-                  {activeDisputes.slice(0, 3).map(dispute => (
-                    <div key={dispute.id} className="p-3 border border-gray-100 rounded-xl bg-gray-50/50">
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 bg-red-100 text-red-700 rounded uppercase tracking-wider">{dispute.status}</span>
-                        <span className="text-[9px] font-bold text-gray-400">ID: {dispute.disputeId}</span>
-                      </div>
-                      <p className="text-xs font-bold text-gray-900 line-clamp-1">{dispute.reason}</p>
-                      <button onClick={() => navigate('/disputes')} className="mt-2 text-[10px] font-bold text-[#316C5B] flex items-center gap-1 hover:underline">
-                        Respond Now <FiArrowRight size={10} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* 7. NOTIFICATIONS PANEL */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-50 flex justify-between items-center bg-gray-50/30">
-              <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                <FiBell className="text-blue-500" /> Notifications
-              </h3>
-            </div>
-            <div className="p-4">
-              <div className="flex flex-col gap-4">
-                {transactions.length > 0 ? (
-                  <div className="flex gap-3">
-                    <div className="w-8 h-8 shrink-0 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
-                      <FiZap size={14} />
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-gray-900">New Transaction Activity</p>
-                      <p className="text-[10px] text-gray-500 mt-0.5">Your recent contract for "{transactions[0]?.serviceId?.title || 'Service'}" was updated.</p>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-center py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">No new notifications</p>
-                )}
-                <div className="flex gap-3">
-                  <div className="w-8 h-8 shrink-0 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
-                    <FiShield size={14} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-gray-900">Security Guard Active</p>
-                    <p className="text-[10px] text-gray-500 mt-0.5">Your assets are protected by TrustLayer Institutional Shield.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-      </div>
-
-      {/* FOOTER SECTION */}
-      <div className="mt-12 pt-8 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4 text-gray-400 text-[11px] font-bold uppercase tracking-widest">
-        <div>© 2024 TrustLayer Institutional. All rights reserved.</div>
-        <div className="flex gap-6">
-          <button className="hover:text-gray-900 transition-colors">Privacy</button>
-          <button className="hover:text-gray-900 transition-colors">Terms</button>
-          <button className="hover:text-gray-900 transition-colors">AML Policy</button>
-        </div>
-      </div>
-
+  if (loading) return (
+    <div className="flex items-center justify-center h-[60vh]">
+      <div className="w-10 h-10 border-2 border-gray-100 border-t-[#316C5B] rounded-full animate-spin"></div>
     </div>
   );
+
+  return (
+    <div className="animate-in fade-in duration-500">
+      <SEO title="Dashboard" />
+      
+      {/* GREETING & STATUS */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
+        <div>
+          <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-2">Welcome back, {profile?.name?.split(' ')[0]}!</h1>
+          <p className="text-gray-500 font-medium flex items-center gap-2">
+            <span className={`w-2 h-2 rounded-full ${role === 'provider' ? 'bg-emerald-500' : 'bg-blue-500'}`}></span>
+            Active {role === 'provider' ? 'Freelancer' : 'Client'} Session • {profile?.industry} Industry
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+           <div className="px-4 py-2 bg-white border border-gray-100 rounded-2xl shadow-sm flex items-center gap-2">
+              <FiStar className="text-yellow-500" />
+              <span className="text-xs font-black text-gray-900">{profile?.trustScore || 100}% Trust Score</span>
+           </div>
+           <button className="p-3 bg-white border border-gray-100 rounded-2xl text-gray-400 hover:text-gray-900 shadow-sm transition-all"><FiSettings size={18} /></button>
+        </div>
+      </div>
+
+      {/* METRICS GRID */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+        <div className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm flex flex-col justify-between min-h-[160px] group hover:shadow-xl transition-all">
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{role === 'provider' ? 'Total Earnings' : 'Funds in Escrow'}</p>
+          <h2 className="text-3xl font-black text-gray-900">₹{(role === 'provider' ? totalEarnings : escrowBalance).toLocaleString()}</h2>
+          <div className={`flex items-center gap-2 ${themeText} text-xs font-bold`}>
+             <FiDollarSign /> <span className="uppercase tracking-widest text-[9px]">Verified Balance</span>
+          </div>
+        </div>
+        <div className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm flex flex-col justify-between min-h-[160px] group hover:shadow-xl transition-all">
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Active Contracts</p>
+          <h2 className="text-3xl font-black text-gray-900">{activeEscrows.length}</h2>
+          <div className={`flex items-center gap-2 ${themeText} text-xs font-bold`}>
+             <FiActivity /> <span className="uppercase tracking-widest text-[9px]">Ongoing Projects</span>
+          </div>
+        </div>
+        <div className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm flex flex-col justify-between min-h-[160px] group hover:shadow-xl transition-all">
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Resolution Center</p>
+          <h2 className="text-3xl font-black text-gray-900">{activeDisputes.length}</h2>
+          <div className="flex items-center gap-2 text-red-600 text-xs font-bold">
+             <FiAlertCircle /> <span className="uppercase tracking-widest text-[9px]">Pending Disputes</span>
+          </div>
+        </div>
+        <div className={`${themeBg} p-8 rounded-[32px] text-white shadow-xl flex flex-col justify-between min-h-[160px] group hover:scale-[1.02] transition-all`}>
+           <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">Quick Action</p>
+           {role === 'provider' ? (
+             <button onClick={() => setShowServiceModal(true)} className="flex items-center justify-between group/btn">
+               <span className="text-lg font-black leading-tight">List New Service</span>
+               <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center group-hover/btn:bg-white group-hover/btn:text-emerald-900 transition-all">
+                 <FiPlus size={20} />
+               </div>
+             </button>
+           ) : (
+             <button onClick={() => setShowPaymentModal(true)} className="flex items-center justify-between group/btn">
+               <span className="text-lg font-black leading-tight">Start New Escrow</span>
+               <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center group-hover/btn:bg-white group-hover/btn:text-blue-900 transition-all">
+                 <FiPlus size={20} />
+               </div>
+             </button>
+           )}
+           <p className="text-[9px] font-bold text-white/40 uppercase tracking-widest">{role === 'provider' ? 'Grow your business' : 'Secure your funds'}</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* MAIN FEED (TABLE) */}
+        <div className="lg:col-span-8">
+          <div className="bg-white rounded-[40px] border border-gray-100 shadow-sm overflow-hidden">
+             <div className="px-10 py-8 border-b border-gray-50 flex justify-between items-center">
+                <h3 className="font-black text-gray-900 uppercase tracking-widest text-[10px]">Recent Activity</h3>
+                <Link to="/transactions" className={`text-[10px] font-black ${themeText} uppercase tracking-widest hover:underline`}>View All</Link>
+             </div>
+             <div className="overflow-x-auto">
+               <table className="w-full text-left">
+                 <thead className="bg-gray-50/50">
+                   <tr>
+                      <th className="px-10 py-5 text-[9px] font-black text-gray-400 uppercase tracking-widest">Project</th>
+                      <th className="px-10 py-5 text-[9px] font-black text-gray-400 uppercase tracking-widest">{role === 'provider' ? 'Client' : 'Partner'}</th>
+                      <th className="px-10 py-5 text-[9px] font-black text-gray-400 uppercase tracking-widest">Amount</th>
+                      <th className="px-10 py-5 text-[9px] font-black text-gray-400 uppercase tracking-widest">Status</th>
+                   </tr>
+                 </thead>
+                 <tbody className="divide-y divide-gray-50">
+                   {transactions.slice(0, 5).map(txn => (
+                     <tr key={txn._id} className="hover:bg-gray-50/50 transition-all group">
+                        <td className="px-10 py-6">
+                          <div className="font-black text-gray-900 text-sm group-hover:text-emerald-700 transition-colors">{txn.serviceId?.title || 'Custom Project'}</div>
+                          <div className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">REF: {txn.transactionId?.slice(-8).toUpperCase() || 'TXN-PENDING'}</div>
+                        </td>
+                        <td className="px-10 py-6 text-xs font-bold text-gray-500">
+                          {role === 'provider' ? txn.clientId?.name : (txn.providerId?.name || 'Assigning...')}
+                        </td>
+                        <td className="px-10 py-6 font-black text-gray-900">₹{txn.amount.toLocaleString()}</td>
+                        <td className="px-10 py-6">
+                          <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                            txn.status === 'completed' ? 'bg-emerald-50 text-emerald-600' : 
+                            txn.status === 'held' ? 'bg-blue-50 text-blue-600' :
+                            txn.status === 'delivered' ? 'bg-orange-50 text-orange-600' : 'bg-gray-50 text-gray-400'
+                          }`}>{txn.status}</span>
+                        </td>
+                     </tr>
+                   ))}
+                   {transactions.length === 0 && (
+                     <tr>
+                       <td colSpan="4" className="px-10 py-20 text-center text-gray-300 font-black uppercase tracking-widest text-[10px]">No recent activity found</td>
+                     </tr>
+                   )}
+                 </tbody>
+               </table>
+             </div>
+          </div>
+        </div>
+
+        {/* SIDE ACTIONS / RECENT STATS */}
+        <div className="lg:col-span-4 flex flex-col gap-8">
+           <div className="bg-white p-10 rounded-[40px] border border-gray-100 shadow-sm relative overflow-hidden">
+              <h3 className="font-black text-gray-900 uppercase tracking-widest text-[10px] mb-8">Command Center</h3>
+              <div className="flex flex-col gap-4">
+                 {role === 'provider' && (
+                    <button onClick={() => setShowProofUploadModal('select')} className="flex items-center gap-4 w-full p-5 rounded-3xl border border-gray-50 hover:bg-emerald-50 transition-all group">
+                      <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all">
+                        <FiUploadCloud size={20} />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-[11px] font-black text-gray-900 uppercase tracking-tight">Submit Evidence</p>
+                        <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Deliver project proof</p>
+                      </div>
+                    </button>
+                 )}
+                 <button className="flex items-center gap-4 w-full p-5 rounded-3xl border border-gray-50 hover:bg-blue-50 transition-all group">
+                    <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all">
+                      <FiFileText size={20} />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-[11px] font-black text-gray-900 uppercase tracking-tight">Contracts</p>
+                      <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Review legal papers</p>
+                    </div>
+                 </button>
+                 <button className="flex items-center gap-4 w-full p-5 rounded-3xl border border-gray-100 bg-gray-50/50 hover:bg-gray-100 transition-all group">
+                    <div className="w-12 h-12 bg-white text-gray-400 rounded-2xl flex items-center justify-center group-hover:text-gray-900 shadow-sm transition-all">
+                      <FiPieChart size={20} />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-[11px] font-black text-gray-900 uppercase tracking-tight">Analytics</p>
+                      <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">View growth trends</p>
+                    </div>
+                 </button>
+              </div>
+           </div>
+
+           <div className={`${themeBg} p-10 rounded-[40px] text-white shadow-xl relative overflow-hidden`}>
+              <h3 className="font-black text-white/60 uppercase tracking-widest text-[10px] mb-6">Trust & Reliability</h3>
+              <div className="flex items-end justify-between">
+                 <div>
+                    <h4 className="text-4xl font-black mb-1">{profile?.trustScore || 100}%</h4>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Verified Reputation</p>
+                 </div>
+                 <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center">
+                    <FiShield size={32} className={`${role === 'provider' ? 'text-emerald-300' : 'text-blue-300'}`} />
+                 </div>
+              </div>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+           </div>
+        </div>
+      </div>
+
+      {/* MODALS */}
+      {renderModals()}
+    </div>
+  );
+
+  function renderModals() {
+    return (
+      <>
+        {/* Create Service Modal */}
+        {showServiceModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/50 backdrop-blur-sm animate-in fade-in">
+            <div className="bg-white rounded-[40px] w-full max-w-md shadow-2xl p-12 animate-in zoom-in-95">
+              <h2 className="text-3xl font-black text-gray-900 mb-8 tracking-tighter">List Service</h2>
+              <form onSubmit={handleCreateService} className="flex flex-col gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Service Title</label>
+                    <input required value={serviceForm.title} onChange={e => setServiceForm({...serviceForm, title: e.target.value})} className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl font-bold text-sm outline-none focus:bg-gray-100" placeholder="e.g. Modern UI Design" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Price (₹)</label>
+                      <input required type="number" value={serviceForm.price} onChange={e => setServiceForm({...serviceForm, price: e.target.value})} className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl font-bold text-sm outline-none focus:bg-gray-100" placeholder="5000" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Category</label>
+                      <select value={serviceForm.category} onChange={e => setServiceForm({...serviceForm, category: e.target.value})} className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl font-bold text-sm outline-none focus:bg-gray-100">
+                        <option>Tech</option>
+                        <option>Hospitality</option>
+                        <option>Medical</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Description</label>
+                    <textarea required value={serviceForm.description} onChange={e => setServiceForm({...serviceForm, description: e.target.value})} className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl font-bold text-sm min-h-[100px] resize-none outline-none focus:bg-gray-100" placeholder="Describe what you offer..."></textarea>
+                  </div>
+                </div>
+                <div className="flex gap-4 pt-4">
+                  <button type="button" onClick={() => setShowServiceModal(false)} className="flex-1 text-gray-400 font-black uppercase text-[10px] tracking-widest">Cancel</button>
+                  <button className={`flex-[2] py-5 ${themeBg} text-white font-black rounded-3xl uppercase text-[10px] tracking-widest shadow-xl shadow-gray-900/10`}>Launch Service</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* New Escrow Modal */}
+        {showPaymentModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/50 backdrop-blur-sm animate-in fade-in">
+            <div className="bg-white rounded-[40px] w-full max-w-md shadow-2xl p-12 animate-in zoom-in-95">
+              <h2 className="text-3xl font-black text-gray-900 mb-8 tracking-tighter">New Escrow</h2>
+              <form onSubmit={handleMakePayment} className="flex flex-col gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Service Provider</label>
+                    <select required value={paymentForm.serviceId} onChange={e => {
+                      const s = availableServices.find(srv => srv._id === e.target.value);
+                      setPaymentForm({...paymentForm, serviceId: e.target.value, amount: s ? s.price : ''});
+                    }} className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl font-bold text-sm outline-none focus:bg-gray-100">
+                      <option value="">Select Partner...</option>
+                      {filteredServices.map(s => <option key={s._id} value={s._id}>{s.title} (₹{s.price})</option>)}
+                      <option value="custom">Custom Partner</option>
+                    </select>
+                  </div>
+                  {paymentForm.serviceId === 'custom' && (
+                    <>
+                      <div>
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Freelancer Email Address</label>
+                        <input required type="email" value={paymentForm.providerEmail || ''} onChange={e => setPaymentForm({...paymentForm, providerEmail: e.target.value})} className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl font-bold text-sm outline-none focus:bg-gray-100" placeholder="freelancer@example.com" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Contract Name</label>
+                        <input required value={paymentForm.customTitle || ''} onChange={e => setPaymentForm({...paymentForm, customTitle: e.target.value})} className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl font-bold text-sm outline-none focus:bg-gray-100" placeholder="e.g. Website Overhaul" />
+                      </div>
+                    </>
+                  )}
+                  <div>
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Contract Amount (₹)</label>
+                    <input required type="number" value={paymentForm.amount} onChange={e => setPaymentForm({...paymentForm, amount: e.target.value})} className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl font-bold text-sm outline-none focus:bg-gray-100" placeholder="10000" />
+                  </div>
+                </div>
+                <div className="flex gap-4 pt-4">
+                  <button type="button" onClick={() => setShowPaymentModal(false)} className="flex-1 text-gray-400 font-black uppercase text-[10px] tracking-widest">Cancel</button>
+                  <button className={`flex-[2] py-5 ${themeBg} text-white font-black rounded-3xl uppercase text-[10px] tracking-widest shadow-xl shadow-gray-900/10`}>Lock Funds</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Proof Upload Modal */}
+        {showProofUploadModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/50 backdrop-blur-sm animate-in fade-in">
+            <div className="bg-white rounded-[40px] w-full max-w-md shadow-2xl p-12 animate-in zoom-in-95">
+              <div className="flex justify-between items-start mb-8">
+                <h2 className="text-3xl font-black text-gray-900 tracking-tighter">Deliver Work</h2>
+                <button onClick={() => setShowProofUploadModal(null)}><FiX size={24} className="text-gray-300" /></button>
+              </div>
+              <form onSubmit={handleUploadProof} className="flex flex-col gap-6">
+                <div className="space-y-4">
+                  {showProofUploadModal === 'select' && (
+                    <div>
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Active Contract</label>
+                      <select required onChange={(e) => setShowProofUploadModal(e.target.value)} className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl font-bold text-sm outline-none focus:bg-gray-100">
+                        <option value="">Select Project...</option>
+                        {transactions.filter(t => t.status === 'held').map(t => <option key={t._id} value={t._id}>{t.serviceId?.title || 'Custom'} - ₹{t.amount}</option>)}
+                      </select>
+                    </div>
+                  )}
+                  <label className="flex flex-col items-center justify-center w-full p-12 border-4 border-dashed border-gray-50 rounded-[40px] bg-gray-50/50 cursor-pointer hover:bg-emerald-50 hover:border-emerald-200 transition-all group">
+                    <FiUploadCloud size={48} className="text-gray-200 group-hover:text-emerald-500 mb-4" />
+                    <span className="text-[11px] font-black uppercase tracking-widest text-gray-400 group-hover:text-emerald-600">{proofFile ? proofFile.name : 'Drop Evidence Files'}</span>
+                    <input type="file" className="hidden" onChange={e => setProofFile(e.target.files[0])} />
+                  </label>
+                </div>
+                <button disabled={!proofFile || showProofUploadModal === 'select'} className={`w-full py-5 ${themeBg} text-white font-black rounded-3xl uppercase text-[10px] tracking-widest shadow-xl shadow-gray-900/10 disabled:opacity-50`}>Submit Evidence</button>
+              </form>
+            </div>
+          </div>
+        )}
+      </>
+    );
+  }
 };
 
 export default Dashboard;
