@@ -1,4 +1,4 @@
-<div align="center">
+<img width="1866" height="997" alt="image" src="https://github.com/user-attachments/assets/571bd34b-d069-43ee-bc83-a7e269ea8ce6" /><div align="center">
 
 # 🛡️ TrustLayer: The Future of Outcome-Based B2B Payments
 
@@ -14,7 +14,7 @@
 | 🌐 **Live Project** | [Visit Website](https://trust-layer-rouge.vercel.app/) |
 | 🚀 **Postman Docs** | [API Documentation](https://documenter.getpostman.com/view/50840763/2sBXqKoKkc) |
 | ⚙️ **Backend API** | [API Server](https://trust-layer-si0i.onrender.com/) |
-| 📺 **YouTube Demo** | [Watch Video](https://www.youtube.com/watch?v=placeholder) |
+| 📺 **YouTube Demo** | [Watch Video](https://youtu.be/c4lx7Xz6oao) |
 
 <br/>
 
