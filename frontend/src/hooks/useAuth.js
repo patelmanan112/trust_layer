@@ -30,9 +30,9 @@ export const useAuth = () => {
     }
   };
 
-  const googleLogin = async (googleToken) => {
+  const googleLogin = async (googleToken, role) => {
     try {
-      const data = await api.post('/api/auth/google', { token: googleToken });
+      const data = await api.post('/api/auth/google', { token: googleToken, role });
       dispatch(setCredentials({ user: data.user, token: data.token }));
       navigate('/dashboard');
       return data;

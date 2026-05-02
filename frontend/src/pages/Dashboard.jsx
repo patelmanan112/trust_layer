@@ -25,11 +25,13 @@ const Dashboard = () => {
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showProofUploadModal, setShowProofUploadModal] = useState(null);
+  const [showRaiseModal, setShowRaiseModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form States
   const [serviceForm, setServiceForm] = useState({ title: '', description: '', price: '', category: 'Tech' });
   const [paymentForm, setPaymentForm] = useState({ serviceId: '', amount: '', customTitle: '', providerEmail: '' });
+  const [raiseForm, setRaiseForm] = useState({ transactionId: '', reason: 'Service was not delivered', description: '' });
   const [proofFile, setProofFile] = useState(null);
 
   const fetchData = useCallback(async () => {
@@ -112,6 +114,21 @@ const Dashboard = () => {
       fetchData();
     } catch (err) { } finally { setIsSubmitting(false); }
   }, [proofFile, showProofUploadModal, fetchData]);
+
+  const handleRaiseDispute = useCallback(async (e) => {
+    e.preventDefault();
+    if (!raiseForm.transactionId || !raiseForm.description.trim()) {
+      return toast.error('Please complete all fields');
+    }
+    setIsSubmitting(true);
+    try {
+      await api.post('/api/disputes', raiseForm);
+      toast.success('Dispute filed successfully');
+      setShowRaiseModal(false);
+      setRaiseForm({ transactionId: '', reason: 'Service was not delivered', description: '' });
+      fetchData();
+    } catch (err) { } finally { setIsSubmitting(false); }
+  }, [raiseForm, fetchData]);
 
   const role = profile?.role || 'client';
   const themeColor = role === 'provider' ? '#1a4d3e' : '#1e3a8a';
@@ -212,6 +229,7 @@ const Dashboard = () => {
                       <th className="px-10 py-5 text-[9px] font-black text-gray-400 uppercase tracking-widest">{role === 'provider' ? 'Client' : 'Partner'}</th>
                       <th className="px-10 py-5 text-[9px] font-black text-gray-400 uppercase tracking-widest">Amount</th>
                       <th className="px-10 py-5 text-[9px] font-black text-gray-400 uppercase tracking-widest">Status</th>
+                      {role === 'client' && <th className="px-10 py-5 text-[9px] font-black text-gray-400 uppercase tracking-widest">Actions</th>}
                    </tr>
                  </thead>
                  <tbody className="divide-y divide-gray-50">
@@ -232,6 +250,21 @@ const Dashboard = () => {
                             txn.status === 'delivered' ? 'bg-orange-50 text-orange-600' : 'bg-gray-50 text-gray-400'
                           }`}>{txn.status}</span>
                         </td>
+                        {role === 'client' && (
+                          <td className="px-10 py-6">
+                            {['held', 'delivered'].includes(txn.status) && (
+                              <button 
+                                onClick={() => {
+                                  setRaiseForm({...raiseForm, transactionId: txn._id});
+                                  setShowRaiseModal(true);
+                                }}
+                                className="text-[9px] font-black text-red-600 uppercase tracking-widest hover:underline flex items-center gap-1"
+                              >
+                                <FiAlertCircle size={12} /> Raise Dispute
+                              </button>
+                            )}
+                          </td>
+                        )}
                      </tr>
                    ))}
                    {transactions.length === 0 && (
@@ -415,6 +448,42 @@ const Dashboard = () => {
                   </label>
                 </div>
                 <button disabled={!proofFile || showProofUploadModal === 'select'} className={`w-full py-5 ${themeBg} text-white font-black rounded-3xl uppercase text-[10px] tracking-widest shadow-xl shadow-gray-900/10 disabled:opacity-50`}>Submit Evidence</button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Raise Dispute Modal */}
+        {showRaiseModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/50 backdrop-blur-sm animate-in fade-in">
+            <div className="bg-white rounded-[40px] w-full max-w-md shadow-2xl p-12 animate-in zoom-in-95">
+              <div className="flex justify-between items-start mb-8">
+                <div>
+                  <h2 className="text-3xl font-black text-gray-900 tracking-tighter">Raise Dispute</h2>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Ref: {raiseForm.transactionId?.slice(-8).toUpperCase()}</p>
+                </div>
+                <button onClick={() => setShowRaiseModal(false)}><FiX size={24} className="text-gray-300" /></button>
+              </div>
+              <form onSubmit={handleRaiseDispute} className="flex flex-col gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Reason for Dispute</label>
+                    <select required value={raiseForm.reason} onChange={e => setRaiseForm({...raiseForm, reason: e.target.value})} className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl font-bold text-sm outline-none focus:bg-gray-100">
+                      <option>Service was not delivered</option>
+                      <option>Quality of work is poor</option>
+                      <option>Communication issues</option>
+                      <option>Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Detailed Explanation</label>
+                    <textarea required value={raiseForm.description} onChange={e => setRaiseForm({...raiseForm, description: e.target.value})} className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl font-bold text-sm min-h-[120px] resize-none outline-none focus:bg-gray-100" placeholder="Please describe the issue in detail..."></textarea>
+                  </div>
+                </div>
+                <div className="flex gap-4 pt-4">
+                  <button type="button" onClick={() => setShowRaiseModal(false)} className="flex-1 text-gray-400 font-black uppercase text-[10px] tracking-widest">Cancel</button>
+                  <button className="flex-[2] py-5 bg-red-600 text-white font-black rounded-3xl uppercase text-[10px] tracking-widest shadow-xl shadow-red-900/10">File Dispute</button>
+                </div>
               </form>
             </div>
           </div>

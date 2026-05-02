@@ -131,11 +131,11 @@ async function googleLogin(req, res, next) {
         name,
         email: email.toLowerCase(),
         passwordHash: await bcrypt.hash(Math.random().toString(36), 12), // Random password
-        role: "client", // Default role
+        role: req.body.role || "client", 
         googleId,
         avatar: picture,
       });
-      console.log(`✅ New user created via Google: ${email}`);
+      console.log(`✅ New user created via Google: ${email} as ${user.role}`);
     }
 
     const jwtToken = signAccessToken({

@@ -247,7 +247,7 @@ const Login = () => {
               <GoogleLogin
                 onSuccess={async (credentialResponse) => {
                   try {
-                    await googleLogin(credentialResponse.credential);
+                    await googleLogin(credentialResponse.credential, accountRole);
                     toast.success('Google Authentication Successful');
                   } catch (err) {
                     const errorMsg = err.response?.data?.message || err.message || 'Backend verification failed';
