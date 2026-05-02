@@ -174,15 +174,15 @@ TrustLayer is built with SEO best practices:
 
 ### Professional Landing Page
 *First impression for potential B2B partners.*
-![Landing Page](https://via.placeholder.com/800x450?text=TrustLayer+Landing+Page)
+<img width="1866" height="997" alt="image" src="https://res.cloudinary.com/dxzo7jfbn/image/upload/v1777719294/Screenshot_2026-05-02_162008_jwazvk.png" />
 
 ### Unified Dashboard
 *One view for all your active escrows and trust metrics.*
-![Dashboard](https://via.placeholder.com/800x450?text=TrustLayer+Dashboard)
+<img width="1866" height="997" alt="image" src="https://res.cloudinary.com/dxzo7jfbn/image/upload/v1777719294/Screenshot_2026-05-02_162125_y7uozd.png" />
 
 ### Dispute Evidence Upload
 *Transparent and secure evidence submission.*
-![Dispute Center](https://via.placeholder.com/800x450?text=TrustLayer+Dispute+Center)
+<img width="1866" height="997" alt="image" src="[https://res.cloudinary.com/dxzo7jfbn/image/upload/v1777719294/Screenshot_2026-05-02_162008_jwazvk.png](https://res.cloudinary.com/dxzo7jfbn/image/upload/v1777719294/Screenshot_2026-05-02_162142_btogbn.png)" />
 
 </div>
 
