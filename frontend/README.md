@@ -1,16 +1,34 @@
-# React + Vite
+# 🛡️ TrustLayer Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The frontend of TrustLayer is a premium React-based B2B SaaS dashboard designed for secure escrow payments and dispute management.
 
-Currently, two official plugins are available:
+## 🚀 Getting Started
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### 1. Install Dependencies
+```bash
+npm install
+```
 
-## React Compiler
+### 2. Configure Environment
+Create a `.env` file based on `.env.example`:
+```env
+VITE_API_URL=https://trust-layer-si0i.onrender.com
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 3. Run Development Server
+```bash
+npm run dev
+```
 
-## Expanding the ESLint configuration
+## 🎨 Tech Stack
+- **Framework:** React 19 (Vite)
+- **State Management:** Redux Toolkit
+- **Styling:** Tailwind CSS 4
+- **Form Handling:** Formik + Yup
+- **Icons:** React Icons (Lucide/Feather)
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 📁 Key Directories
+- `/src/components`: Reusable UI components (Modals, Cards, Navbar).
+- `/src/pages`: Main application views (Dashboard, Dispute, Login).
+- `/src/store`: Global state management logic.
+- `/src/services`: Axios API client with centralized error handling.
