@@ -15,8 +15,12 @@ const morgan            = require('morgan');
 const app = express();
 
 // ── Middleware ──────────────────────────────────────────────
+const clientOrigin = process.env.CLIENT_ORIGIN 
+  ? process.env.CLIENT_ORIGIN.replace(/\/$/, "") 
+  : 'http://localhost:5173';
+
 app.use(cors({
-  origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+  origin: clientOrigin,
   credentials: true,
 }));
 app.use(morgan('dev'));
