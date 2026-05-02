@@ -76,13 +76,15 @@ async function login(req, res, next) {
     }
 
     const user = await User.findOne({ email: String(email).toLowerCase().trim() });
-    if (!user) {
+    if (!user || !user.passwordHash) {
+      console.error(`❌ Login failed: User not found or missing password hash for ${email}`);
       const err = new Error("Invalid credentials");
       err.statusCode = 401;
       throw err;
     }
 
-    const ok = await bcrypt.compare(password, user.passwordHash);
+    // Defensive check to prevent "Illegal arguments: string, undefined"
+    const ok = await bcrypt.compare(String(password), String(user.passwordHash));
     if (!ok) {
       const err = new Error("Invalid credentials");
       err.statusCode = 401;
@@ -97,6 +99,7 @@ async function login(req, res, next) {
 
     return res.json({ token, user: sanitizeUser(user) });
   } catch (e) {
+    console.error("❌ Auth Error:", e.message);
     return next(e);
   }
 }
