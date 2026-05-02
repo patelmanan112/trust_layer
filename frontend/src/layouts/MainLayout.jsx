@@ -76,7 +76,7 @@ const MainLayout = () => {
             </div>
             <div className="overflow-hidden">
               <p className="text-[11px] font-black text-gray-900 truncate uppercase tracking-tighter">{user?.name || 'Authorized User'}</p>
-              <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">{user?.role || 'Verified account'}</p>
+              <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">{user?.role || 'Loading profile...'}</p>
             </div>
           </div>
           

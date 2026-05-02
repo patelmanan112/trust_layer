@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useSelector } from 'react-redux';
 import { 
   FiUser, 
   FiShield, 
@@ -12,6 +13,7 @@ import {
 } from 'react-icons/fi';
 
 const Setting = () => {
+  const { user } = useSelector(state => state.auth);
   const [activeTab, setActiveTab] = useState('profile');
 
   const tabs = [
@@ -38,8 +40,8 @@ const Setting = () => {
                 </div>
               </div>
               <div>
-                <h3 className="text-lg font-bold text-gray-900">Sarah Jenkins</h3>
-                <p className="text-sm text-gray-500 mb-3">Enterprise Client Account</p>
+                <h3 className="text-lg font-bold text-gray-900">{user?.name || 'Authorized User'}</h3>
+                <p className="text-sm text-gray-500 mb-3 uppercase tracking-wider">{user?.role || 'Verified'} Account</p>
                 <div className="flex gap-3">
                   <button className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50">Upload New</button>
                   <button className="px-4 py-2 text-sm font-semibold text-red-600 hover:underline">Remove</button>
@@ -49,16 +51,12 @@ const Setting = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Full Name / Organization</label>
-                <input type="text" defaultValue="Sarah Jenkins" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#316C5B]" />
-              </div>
-              <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Role</label>
-                <input type="text" disabled defaultValue="Client" className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl text-sm text-gray-500 cursor-not-allowed" />
+                <input type="text" disabled defaultValue={user?.role || 'User'} className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl text-sm text-gray-500 cursor-not-allowed uppercase tracking-widest" />
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Email Address</label>
-                <input type="email" defaultValue="sarah.j@enterprise.com" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#316C5B]" />
+                <input type="email" defaultValue={user?.email || ''} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#316C5B]" />
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Phone Number</label>

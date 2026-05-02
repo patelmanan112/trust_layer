@@ -118,10 +118,10 @@ const Login = () => {
       <div className="flex-1 flex items-center justify-center p-6 md:p-10">
         <div className="bg-white w-full max-w-[500px] p-8 md:p-12 rounded-[32px] shadow-[0_10px_40px_-15px_rgba(0,0,0,0.08)]">
           
-          {type && (
+          {(type || (activeTab === 'signin' && accountRole === 'provider')) && (
             <div className="mb-6 flex items-center gap-2">
               <span className="bg-green-100 text-green-800 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">
-                {type === 'freelancer' || type === 'provider' ? 'Freelancer' : 'Client'} Account
+                {accountRole === 'provider' ? 'Freelancer' : 'Client'} Account
               </span>
               {industry && (
                 <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">

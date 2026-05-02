@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { updateUser } from '../store/slices/authSlice';
 import api from '../services/api';
 import { 
   FiShield, 
@@ -23,6 +24,7 @@ import SEO from '../components/SEO';
 
 const ActiveEscrows = () => {
   const { user } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState('all');
   const [transactions, setTransactions] = useState([]);
   const [profile, setProfile] = useState(null);
@@ -43,7 +45,11 @@ const ActiveEscrows = () => {
         api.get('/api/users/profile')
       ]);
       setTransactions(txData?.transactions || []);
-      setProfile(profileData?.user || null);
+      const userData = profileData?.user || null;
+      setProfile(userData);
+      if (userData) {
+        dispatch(updateUser(userData));
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -110,7 +116,9 @@ const ActiveEscrows = () => {
       <div className="mb-10">
         <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-3">Active Escrows</h1>
         <p className="text-lg text-gray-500 max-w-[600px] font-medium leading-relaxed">
-          Your funds are locked in secure vaults. Release them only after verifying the quality of work.
+          {profile?.role === 'provider' 
+            ? "Your earned funds are secured in TrustLayer's vaults. Deliver your work milestones to release payment." 
+            : "Your funds are locked in secure vaults. Release them only after verifying the quality of work."}
         </p>
       </div>
 

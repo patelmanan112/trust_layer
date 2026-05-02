@@ -3,10 +3,15 @@ import { FaRegBell } from "react-icons/fa";
 import { FiLayout, FiBell, FiBriefcase, FiShield } from 'react-icons/fi';
 import { FaWallet } from 'react-icons/fa';
 import { HiMenuAlt3, HiX } from 'react-icons/hi';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { logout } from '../../store/slices/authSlice';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { isAuthenticated, user } = useSelector(state => state.auth);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -34,14 +39,33 @@ export default function Navbar() {
           <FaWallet size={22} className="cursor-pointer hover:text-[#064E3B]" />
         </div>
         
-        <div className="hidden lg:block">
-          <Link to="/role-selection" className="no-underline">
-            <button 
-              className="bg-[#3F675A] text-white px-8 py-2.5 rounded-lg font-semibold transition-all hover:bg-[#315248] shadow-md flex items-center justify-center whitespace-nowrap"
-            >
-              Create Escrow
-            </button>
-          </Link>
+        <div className="hidden lg:flex items-center gap-4">
+          {isAuthenticated ? (
+            <div className="flex items-center gap-4">
+              <Link to="/dashboard" className="no-underline">
+                <button className="bg-[#3F675A] text-white px-8 py-2.5 rounded-lg font-semibold transition-all hover:bg-[#315248] shadow-md">
+                  Go to Dashboard
+                </button>
+              </Link>
+              <button 
+                onClick={() => { dispatch(logout()); navigate('/'); }}
+                className="text-gray-500 font-bold hover:text-red-600 transition-colors uppercase tracking-widest text-[10px]"
+              >
+                Logout
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-4">
+              <Link to="/login" className="text-gray-600 font-bold hover:text-[#3F675A] transition-colors uppercase tracking-widest text-[10px] no-underline">
+                Sign In
+              </Link>
+              <Link to="/role-selection" className="no-underline">
+                <button className="bg-[#3F675A] text-white px-8 py-2.5 rounded-lg font-semibold transition-all hover:bg-[#315248] shadow-md flex items-center justify-center whitespace-nowrap">
+                  Get Started
+                </button>
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Mobile Menu Toggle */}

@@ -25,6 +25,8 @@ const User = require('../models/User').User;
 // POST /api/transactions
 async function createTransaction(req, res, next) {
   try {
+    console.log(`[DEBUG] createTransaction: user=${req.user?.sub}, role=${req.user?.role}`);
+    
     const { serviceId, amount, providerEmail, customTitle } = req.body || {};
     if (!serviceId || amount == null) {
       const e = new Error('serviceId and amount are required'); e.statusCode = 400; throw e;
@@ -42,10 +44,16 @@ async function createTransaction(req, res, next) {
         const e = new Error('providerEmail and customTitle are required for custom escrows'); e.statusCode = 400; throw e;
       }
       
-      const provider = await User.findOne({ email: String(providerEmail).toLowerCase().trim(), role: 'provider' });
-      if (!provider) {
-        const e = new Error('Freelancer not found with that email'); e.statusCode = 404; throw e;
+      const existingUser = await User.findOne({ email: String(providerEmail).toLowerCase().trim() });
+      if (!existingUser) {
+        const e = new Error('No user found with that email. Please ensure the freelancer has registered.'); e.statusCode = 404; throw e;
       }
+      
+      if (existingUser.role !== 'provider') {
+        const e = new Error(`The user '${providerEmail}' is registered as a ${existingUser.role}, not a freelancer. They must have a freelancer account to receive payments.`); e.statusCode = 400; throw e;
+      }
+      
+      const provider = existingUser;
       
       // Create a one-off custom service
       const customService = await Service.create({

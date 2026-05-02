@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { updateUser } from '../store/slices/authSlice';
 import api from '../services/api';
 import { 
   FiPlus, FiDollarSign, FiClock, FiCheckCircle, FiAlertCircle, 
@@ -13,6 +14,7 @@ import SEO from '../components/SEO';
 
 const Dashboard = () => {
   const { user: authUser } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
   const [profile, setProfile] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [disputes, setDisputes] = useState([]);
@@ -45,6 +47,9 @@ const Dashboard = () => {
       ]);
       const userData = pData?.user;
       setProfile(userData);
+      if (userData) {
+        dispatch(updateUser(userData));
+      }
       setTransactions(tData?.transactions || []);
       setDisputes(dData?.disputes || []);
       
@@ -130,7 +135,7 @@ const Dashboard = () => {
     } catch (err) { } finally { setIsSubmitting(false); }
   }, [raiseForm, fetchData]);
 
-  const role = profile?.role || 'client';
+  const role = profile?.role;
   const themeColor = role === 'provider' ? '#1a4d3e' : '#1e3a8a';
   const themeBg = role === 'provider' ? 'bg-[#1a4d3e]' : 'bg-[#1e3a8a]';
   const themeLightBg = role === 'provider' ? 'bg-emerald-50' : 'bg-blue-50';
@@ -156,8 +161,8 @@ const Dashboard = () => {
         <div>
           <h1 className="text-4xl font-black text-gray-900 tracking-tight mb-2">Welcome back, {profile?.name?.split(' ')[0]}!</h1>
           <p className="text-gray-500 font-medium flex items-center gap-2">
-            <span className={`w-2 h-2 rounded-full ${role === 'provider' ? 'bg-emerald-500' : 'bg-blue-500'}`}></span>
-            Active {role === 'provider' ? 'Freelancer' : 'Client'} Session • {profile?.industry} Industry
+            <span className={`w-2 h-2 rounded-full ${role === 'provider' ? 'bg-emerald-500' : role === 'client' ? 'bg-blue-500' : 'bg-gray-300'}`}></span>
+            Active {role === 'provider' ? 'Freelancer' : role === 'client' ? 'Client' : 'Unknown'} Session • {profile?.industry} Industry
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -192,7 +197,7 @@ const Dashboard = () => {
              <FiAlertCircle /> <span className="uppercase tracking-widest text-[9px]">Pending Disputes</span>
           </div>
         </div>
-        <div className={`${themeBg} p-8 rounded-[32px] text-white shadow-xl flex flex-col justify-between min-h-[160px] group hover:scale-[1.02] transition-all`}>
+        <div className={`${themeBg || 'bg-gray-800'} p-8 rounded-[32px] text-white shadow-xl flex flex-col justify-between min-h-[160px] group hover:scale-[1.02] transition-all`}>
            <p className="text-[10px] font-black text-white/60 uppercase tracking-widest">Quick Action</p>
            {role === 'provider' ? (
              <button onClick={() => setShowServiceModal(true)} className="flex items-center justify-between group/btn">
@@ -201,15 +206,17 @@ const Dashboard = () => {
                  <FiPlus size={20} />
                </div>
              </button>
-           ) : (
+           ) : role === 'client' ? (
              <button onClick={() => setShowPaymentModal(true)} className="flex items-center justify-between group/btn">
                <span className="text-lg font-black leading-tight">Start New Escrow</span>
                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center group-hover/btn:bg-white group-hover/btn:text-blue-900 transition-all">
                  <FiPlus size={20} />
                </div>
              </button>
+           ) : (
+             <div className="text-white/60 text-xs font-bold">Waiting for profile...</div>
            )}
-           <p className="text-[9px] font-bold text-white/40 uppercase tracking-widest">{role === 'provider' ? 'Grow your business' : 'Secure your funds'}</p>
+           <p className="text-[9px] font-bold text-white/40 uppercase tracking-widest">{role === 'provider' ? 'Monetize your expertise' : 'Secure your transactions'}</p>
         </div>
       </div>
 
