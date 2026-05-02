@@ -182,7 +182,7 @@ TrustLayer is built with SEO best practices:
 
 ### Dispute Evidence Upload
 *Transparent and secure evidence submission.*
-<img width="1866" height="997" alt="image" src="[https://res.cloudinary.com/dxzo7jfbn/image/upload/v1777719294/Screenshot_2026-05-02_162008_jwazvk.png](https://res.cloudinary.com/dxzo7jfbn/image/upload/v1777719294/Screenshot_2026-05-02_162142_btogbn.png)" />
+<img width="1866" height="997" alt="image" src="https://res.cloudinary.com/dxzo7jfbn/image/upload/v1777719294/Screenshot_2026-05-02_162142_btogbn.png" />
 
 </div>
 
