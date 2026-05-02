@@ -14,7 +14,8 @@ import {
   FiTrash2,
   FiInfo,
   FiArrowRight,
-  FiPlus
+  FiPlus,
+  FiShield
 } from 'react-icons/fi';
 import { BiRupee } from 'react-icons/bi';
 import toast from 'react-hot-toast';
