@@ -1,12 +1,20 @@
 <div align="center">
 
-<img src="https://img.shields.io/badge/TrustLayer-B2B%20SaaS%20Fintech%20Platform-blueviolet?style=for-the-badge&logo=shield&logoColor=white" alt="TrustLayer Banner" />
-
-# 🛡️ TrustLayer
+# 🛡️ TrustLayer: The Future of Outcome-Based B2B Payments
 
 ### *A successful payment does not guarantee a successful service — TrustLayer ensures both.*
 
-**A B2B SaaS Fintech Platform for Outcome-Based Escrow Payments & Trust Verification**
+**A B2B SaaS Fintech Platform for Secure Escrow Payments, Dispute Resolution, and Trust Verification.**
+
+<br/>
+
+| **Resource** | **Link** |
+|:---:|:---:|
+| 🎨 **Figma Design** | [View Design](https://www.figma.com/proto/xpWC4tlj3KSbLjvKCF4ceZ/untitled?node-id=817-4&t=9b6ygc3JUveGCtmS-1) |
+| 🌐 **Live Project** | [Visit Website](https://trust-layer-rouge.vercel.app/) |
+| 🚀 **Postman Docs** | [API Documentation](https://documenter.getpostman.com/view/50840763/2sBXqKoKkc) |
+| ⚙️ **Backend API** | [API Server](https://trust-layer-si0i.onrender.com/) |
+| 📺 **YouTube Demo** | [Watch Video](https://www.youtube.com/watch?v=placeholder) |
 
 <br/>
 
@@ -15,168 +23,196 @@
 [![MongoDB](https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
 [![Redux](https://img.shields.io/badge/Redux_Toolkit-593D88?style=for-the-badge&logo=redux&logoColor=white)](https://redux-toolkit.js.org/)
 [![Express.js](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
-[![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)](https://jwt.io/)
-
-<br/>
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
-
-<br/>
-
-**🌐 Deployed App:** [trust-layer-rouge.vercel.app](https://trust-layer-rouge.vercel.app/)  
-**⚙️ Backend API:** [trust-layer-si0i.onrender.com](https://trust-layer-si0i.onrender.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 </div>
 
 ---
 
-## 🛠️ Tech Stack
+## 🛑 The Problem: The Trust Gap in B2B Services
 
-<div align="center">
+In the current global digital economy, B2B service transactions (freelance, consulting, software development) are plagued by a fundamental lack of security:
 
-| Layer | Technology |
-|-------|------------|
-| 🎨 **Frontend** | React 19, Redux Toolkit, Tailwind CSS 4, Formik/Yup, Axios |
-| ⚙️ **Backend** | Node.js, Express 5, JWT, Bcrypt.js, Multer, Morgan |
-| 🗄️ **Database** | MongoDB Atlas, Mongoose 9 |
+1.  **Payment Risks:** Clients are often forced to pay 50-100% upfront to "lock in" a provider, with no guarantee of quality.
+2.  **Delivery Risks:** Providers often complete work only to face "scope creep" or clients who vanish without paying the final invoice.
+3.  **Complex Disputes:** When things go wrong, there is no centralized, evidence-based system to resolve issues fairly.
+4.  **Opaque Reliability:** General review systems are easily manipulated; there is no data-driven "Trust Score" linked to actual financial outcomes.
 
-</div>
+## ✅ The Solution: TrustLayer's Outcome-Based Escrow
 
----
+**TrustLayer** redefines how businesses interact by acting as a neutral, automated intermediary. Our platform ensures that **trust is built into the protocol**, not just the contract.
 
-## 📖 About the Project
-
-**TrustLayer** is a professional B2B SaaS platform that secures digital service transactions using an **Outcome-Based Escrow** mechanism. It ensures that funds are only released to a provider once the service is verified and any potential disputes are resolved.
-
-### *Project Assets*
-- 💼 **Figma Prototype:** [Figma Link](https://www.figma.com/proto/xpWC4tlj3KSbLjvKCF4ceZ/untitled?node-id=817-4&t=9b6ygc3JUveGCtmS-1)
+### How it Works:
+1.  **Smart Escrow:** When a contract starts, the client's funds are moved into a secure "Held" state.
+2.  **Verified Delivery:** The provider submits their work through the platform.
+3.  **Outcome Verification:** The client reviews the output. Only upon explicit verification are the funds released.
+4.  **Automated Arbitration:** If a dispute arises, the funds remain locked until a resolution is reached based on submitted evidence.
 
 ---
 
-## ✨ Features (Implemented)
+## ✨ Core Features
 
-- ✅ **Modular Backend Architecture** — Separation of concerns between `app.js` and `index.js`.
-- ✅ **Secure Escrow Flow** — Funds held in `held` state until client verification.
-- ✅ **Dispute Resolution Center** — Full evidence upload support (Multer) and administrative resolution.
-- ✅ **Role-Based Dashboards** — Personalized views for Clients and Providers.
-- ✅ **Trust Score Engine** — Reliability tracking for marketplace users.
-- ✅ **Marketplace Services** — Freelancers can list services; Clients can initiate custom contracts.
-- ✅ **Global Middleware** — Professional logging (Morgan), CORS handling, and centralized error handling.
+### 🔐 Enterprise-Grade Security
+- **Multi-Factor Authentication:** Secure login using JWT and Google OAuth 2.0.
+- **Role-Based Access Control (RBAC):** Distinct interfaces and permissions for 'Clients', 'Freelancers', and 'Admins'.
+
+### 💰 Escrow & Financial Lifecycle
+- **Escrow-as-a-Service:** Automated holding and releasing of funds based on milestone verification.
+- **Transaction History:** Immutable record of all financial movements for auditing and tax purposes.
+
+### ⚖️ Dispute Resolution Center
+- **Evidence Vault:** Securely upload screenshots, contracts, and documents as proof during a dispute.
+- **Resolution Tracking:** Transparency into the status of active disputes and historical outcomes.
+
+### 📊 Dynamic Trust Engine
+- **Trust Scores:** A mathematical reliability score calculated from successful project completion rates and dispute history.
+- **Service Marketplace:** A curated directory where providers can list specialized services and clients can initiate secure contracts instantly.
+
+### 🎨 Premium User Experience
+- **Sleek UI/UX:** A modern, dark-themed interface built for professionals.
+- **Real-time Notifications:** Stay updated on escrow status, new messages, and dispute updates.
 
 ---
 
-## 📁 Project Structure
+## 🛠️ Detailed Tech Stack
 
-```
+| Layer | Technologies Used | Key Purpose |
+| :--- | :--- | :--- |
+| **Frontend** | React 19, Redux Toolkit, Tailwind CSS 4 | Core UI, State Management, Styling |
+| **Backend** | Node.js, Express.js | API Architecture, Business Logic |
+| **Database** | MongoDB Atlas, Mongoose | NoSQL Data Persistence |
+| **Auth** | JWT, Bcrypt.js, Passport.js | Secure Sessions & Hashing |
+| **Storage** | Multer | File Handling for Evidence |
+| **DevOps** | Vercel (Frontend), Render (Backend) | CI/CD and Hosting |
+
+---
+
+## 📁 Project Architecture & Folder Structure
+
+We follow a modular, scalable architecture to ensure the codebase remains maintainable as the platform grows.
+
+```text
 TrustLayer/
-│
-├── 📂 frontend/                        # 🎨 React + Vite Frontend
-│   ├── src/
-│   │   ├── 📂 components/              # UI Components (Navbar, Dashboard, etc.)
-│   │   ├── 📂 store/                   # Redux Toolkit (auth, ui slices)
-│   │   ├── 📂 services/                # Axios API instance & Interceptors
-│   │   ├── 📂 hooks/                   # Custom hooks (useAuth)
-│   │   └── 📂 pages/                   # Main Views (Login, Dispute, Landing)
-│
-├── 📂 backend/                         # ⚙️ Node.js + Express Backend
+├── 📂 frontend/               # React + Vite Application
 │   ├── 📂 src/
-│   │   ├── 📂 controllers/             # Business Logic (Auth, Escrow, Dispute)
-│   │   ├── 📂 models/                  # Mongoose Schemas (User, Transaction)
-│   │   ├── 📂 routes/                  # Express Router definitions
-│   │   ├── 📂 config/                  # DB Connection (MongoDB Atlas)
-│   │   ├── app.js                      # Middleware & Route Registration
-│   │   └── index.js                    # Server Startup & Error Catching
-│   ├── 📂 uploads/                     # Storage for Dispute Evidence
-│   └── .env                            # Sensitive Configurations
+│   │   ├── 📂 components/     # UI Atoms (Navbar, Cards, Modals, Buttons)
+│   │   ├── 📂 pages/          # Main Views (Dashboard, Escrow, Dispute, Settings)
+│   │   ├── 📂 store/          # Redux Slices (authSlice, transactionSlice)
+│   │   ├── 📂 services/       # API Interceptors & Axios Instance
+│   │   ├── 📂 hooks/          # Custom Hooks (useAuth, useEscrow)
+│   │   ├── 📂 layouts/        # Shared Layout Wrappers
+│   │   └── App.jsx            # Routing & Global Providers
+│   └── index.html             # Entry Point & SEO Meta Tags
+│
+├── 📂 backend/                # Node.js + Express API
+│   ├── 📂 src/
+│   │   ├── 📂 controllers/    # Route Handlers (Auth, Escrow, Dispute logic)
+│   │   ├── 📂 models/         # Mongoose Data Schemas
+│   │   ├── 📂 routes/         # API Endpoint Definitions
+│   │   ├── 📂 middleware/     # Auth Protection & Error Handlers
+│   │   ├── 📂 config/         # MongoDB Connection & Env Validation
+│   │   └── app.js             # Middleware Orchestration
+│   └── index.js               # Entry Point (Server Startup)
+│
+├── 📂 uploads/                # Local Storage for Dispute Evidence
+├── .gitignore                 # Root Git Ignore Rules
+├── LICENSE                    # MIT License Terms
+└── README.md                  # Comprehensive Documentation
 ```
 
 ---
 
-## ⚙️ Installation & Setup
+## 🚀 Getting Started
 
-### 1. Backend Setup
+### Prerequisites
+- Node.js (v18+)
+- MongoDB Atlas Account
+- Google Cloud Console Project (for OAuth)
+
+### 1. Installation
+```bash
+git clone https://github.com/patelmanan112/TrustLayer.git
+cd TrustLayer
+```
+
+### 2. Backend Setup
 ```bash
 cd backend
 npm install
-# Configure .env with MONGO_URI, JWT_SECRET, and CLIENT_ORIGIN
-npm run dev
+# Create a .env file:
+PORT=5000
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_signing_key
+CLIENT_ORIGIN=http://localhost:5173
 ```
+Run development server: `npm run dev`
 
-### 2. Frontend Setup
+### 3. Frontend Setup
 ```bash
 cd frontend
 npm install
-# Configure .env with VITE_API_URL
-npm run dev
+# Create a .env file:
+VITE_API_URL=http://localhost:5000
 ```
+Run development server: `npm run dev`
 
 ---
 
-## 🚀 Postman Documentation
-A comprehensive Postman collection for testing all endpoints is available in the root as `postman_documentation.md`. 
+## 🔍 SEO & Visibility
 
-**Key Endpoints:**
-- `POST /api/auth/login` — Get your JWT Token.
-- `GET /api/dashboard` — View role-specific statistics.
-- `POST /api/disputes/:id/proof` — Upload evidentiary files (form-data).
-
----
-
-## 👤 About the Author
-
-**Built by Manan Patel**
-- 📧 **Email:** manan.patel.cg@gmail.com
-- 💼 **LinkedIn:** [Manan Patel](https://www.linkedin.com/in/manan-patel-557535390/)
-- 💻 **GitHub:** [patelmanan112](https://github.com/patelmanan112)
+TrustLayer is built with SEO best practices:
+- **Semantic HTML5:** Using `<header>`, `<main>`, `<footer>`, and `<section>` tags.
+- **Meta Tags:** Optimized descriptions and keywords for indexing.
+- **Open Graph:** Professional sharing previews for LinkedIn and Twitter.
+- **Performance:** Optimized asset delivery for fast initial load times.
 
 ---
+
+## 📸 Project Gallery
 
 <div align="center">
 
-**⭐ Star this repo if you found it helpful!**
+### Professional Landing Page
+*First impression for potential B2B partners.*
+![Landing Page](https://via.placeholder.com/800x450?text=TrustLayer+Landing+Page)
+
+### Unified Dashboard
+*One view for all your active escrows and trust metrics.*
+![Dashboard](https://via.placeholder.com/800x450?text=TrustLayer+Dashboard)
+
+### Dispute Evidence Upload
+*Transparent and secure evidence submission.*
+![Dispute Center](https://via.placeholder.com/800x450?text=TrustLayer+Dispute+Center)
 
 </div>
 
 ---
 
-## 👤 About the Author
-
-<div align="center">
-
-**Built with ❤️ by a passionate frontend developer focused on solving real-world fintech problems through clean UI, scalable architecture, and outcome-driven design.**
-
-[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/patelmanan112)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/manan-patel-557535390/)
-[![Portfolio](https://img.shields.io/badge/Portfolio-FF5722?style=for-the-badge&logo=todoist&logoColor=white)](https://manan-patel-portfolio.vercel.app/)
-
-</div>
+## 🗺️ Roadmap & Future Enhancements
+- [ ] **Smart Contract Integration:** Moving escrow logic to Ethereum/Solana for decentralization.
+- [ ] **Multi-Currency Support:** Allowing payments in USD, EUR, and Crypto.
+- [ ] **AI-Assisted Arbitration:** Using AI to analyze evidence and suggest resolution paths.
+- [ ] **Mobile App:** Dedicated iOS and Android applications.
 
 ---
 
-## 📬 Contact
+## 👤 Built By
 
-Have questions, suggestions, or want to collaborate?
-
-- 📧 **Email:** manan.patel.cg@gmail.com
-- 💼 **LinkedIn:** [linkedin.com/in/Manan-Patel](https://www.linkedin.com/in/manan-patel-557535390/)
+**Manan Patel**
+- 📧 [manan.patel.cg@gmail.com](mailto:manan.patel.cg@gmail.com)
+- 💼 [LinkedIn](https://www.linkedin.com/in/manan-patel-557535390/)
+- 💻 [GitHub](https://github.com/patelmanan112)
 
 ---
 
 ## 📄 License
 
-Distributed under the MIT License. See [`LICENSE`](LICENSE) for more information.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
 <div align="center">
 
-**⭐ Star this repo if you found it helpful! It motivates open source contributors like me.**
-
-<img src="https://img.shields.io/github/stars/your-username/trustlayer?style=social" alt="Stars" />
-&nbsp;
-<img src="https://img.shields.io/github/forks/your-username/trustlayer?style=social" alt="Forks" />
-
-*Made with Love *
+**⭐ Star this repo if you find it useful!**
 
 </div>
