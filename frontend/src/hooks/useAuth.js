@@ -30,6 +30,17 @@ export const useAuth = () => {
     }
   };
 
+  const googleLogin = async (googleToken) => {
+    try {
+      const data = await api.post('/api/auth/google', { token: googleToken });
+      dispatch(setCredentials({ user: data.user, token: data.token }));
+      navigate('/dashboard');
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  };
+
   const signout = () => {
     dispatch(logout());
     navigate('/login');
@@ -42,6 +53,7 @@ export const useAuth = () => {
     loading,
     login,
     register,
+    googleLogin,
     signout
   };
 };

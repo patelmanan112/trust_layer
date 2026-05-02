@@ -1,4 +1,5 @@
 const bcrypt = require("bcryptjs");
+const { OAuth2Client } = require("google-auth-library");
 
 const { User, ROLES } = require("../models/User");
 const { signAccessToken } = require("../utils/tokens");
@@ -104,5 +105,51 @@ async function login(req, res, next) {
   }
 }
 
-module.exports = { register, login };
+async function googleLogin(req, res, next) {
+  try {
+    const { token } = req.body || {};
+    if (!token) {
+      const err = new Error("Google token is required");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    const { email, name, picture, sub: googleId } = payload;
+
+    let user = await User.findOne({ email: email.toLowerCase() });
+
+    if (!user) {
+      // Create new user if they don't exist
+      user = await User.create({
+        name,
+        email: email.toLowerCase(),
+        passwordHash: await bcrypt.hash(Math.random().toString(36), 12), // Random password
+        role: "client", // Default role
+        googleId,
+        avatar: picture,
+      });
+      console.log(`✅ New user created via Google: ${email}`);
+    }
+
+    const jwtToken = signAccessToken({
+      sub: user._id.toString(),
+      role: user.role,
+      email: user.email,
+    });
+
+    return res.json({ token: jwtToken, user: sanitizeUser(user) });
+  } catch (e) {
+    console.error("❌ Google Auth Error:", e.message);
+    return next(e);
+  }
+}
+
+module.exports = { register, login, googleLogin };
 

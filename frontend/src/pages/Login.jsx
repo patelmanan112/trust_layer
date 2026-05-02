@@ -8,6 +8,7 @@ import Navbar from '../components/Navbar/Navbar';
 import { useAuth } from '../hooks/useAuth';
 import SEO from '../components/SEO';
 import toast from 'react-hot-toast';
+import { GoogleLogin } from '@react-oauth/google';
 
 const Login = () => {
   const [activeTab, setActiveTab] = useState('signin');
@@ -15,7 +16,7 @@ const Login = () => {
   const type = searchParams.get('type');
   const industry = searchParams.get('industry');
   const navigate = useNavigate();
-  const { login, register } = useAuth();
+  const { login, register, googleLogin } = useAuth();
   const [serverError, setServerError] = useState('');
   
   // Map 'freelancer' from URL to 'provider' for DB
@@ -232,6 +233,37 @@ const Login = () => {
             <button type="submit" className="w-full py-5 bg-[#3d6356] text-white rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 hover:bg-[#2a453c] transition-all shadow-xl shadow-emerald-900/10 disabled:opacity-50" disabled={formik.isSubmitting}>
               {activeTab === 'create' ? 'Create Secure Account' : 'Authenticate Session'} <FiArrowRight />
             </button>
+
+            <div className="relative my-8">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-100"></div>
+              </div>
+              <div className="relative flex justify-center text-[10px] uppercase tracking-widest font-black">
+                <span className="bg-white px-4 text-gray-400">Secure Social Auth</span>
+              </div>
+            </div>
+
+            <div className="flex justify-center w-full">
+              <GoogleLogin
+                onSuccess={async (credentialResponse) => {
+                  try {
+                    await googleLogin(credentialResponse.credential);
+                    toast.success('Google Authentication Successful');
+                  } catch (err) {
+                    const errorMsg = err.response?.data?.message || err.message || 'Backend verification failed';
+                    toast.error(`Google Login: ${errorMsg}`);
+                    console.error('Google Auth Error:', err);
+                  }
+                }}
+                onError={() => {
+                  toast.error('Google Login: Library initialization failed');
+                }}
+                useOneTap
+                theme="outline"
+                shape="pill"
+                width={350}
+              />
+            </div>
           </form>
 
           <div className="text-center mt-8 text-[10px] text-gray-400 font-bold leading-normal uppercase tracking-tighter">
